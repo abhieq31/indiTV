@@ -212,8 +212,11 @@ final class Apps {
     /** Usage access (Settings > Apps > Special app access), for the Recent row. */
     static boolean hasUsageAccess(Context c) {
         AppOpsManager ops = c.getSystemService(AppOpsManager.class);
-        return ops.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,
-                Process.myUid(), c.getPackageName()) == AppOpsManager.MODE_ALLOWED;
+        if (ops == null) return false;
+        int mode = android.os.Build.VERSION.SDK_INT >= 29
+                ? ops.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), c.getPackageName())
+                : ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), c.getPackageName()); // Android 8-9
+        return mode == AppOpsManager.MODE_ALLOWED;
     }
 
     private static void addActivities(Context c, PackageManager pm, String category, List<Entry> out, Map<String, Boolean> seen) {

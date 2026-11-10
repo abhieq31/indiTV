@@ -232,10 +232,20 @@ final class PhotoImport {
         if (sm == null) return out;
         for (StorageVolume v : sm.getStorageVolumes()) {
             if (!v.isRemovable() || !Environment.MEDIA_MOUNTED.equals(v.getState())) continue;
-            File d = v.getDirectory();
+            File d = directory(v);
             if (d != null) out.add(d);
         }
         return out;
+    }
+
+    /** A volume's folder: getDirectory() on Android 11+, the older hidden getPathFile() before. */
+    private static File directory(StorageVolume v) {
+        if (android.os.Build.VERSION.SDK_INT >= 30) return v.getDirectory();
+        try {
+            return (File) StorageVolume.class.getMethod("getPathFile").invoke(v);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**

@@ -47,10 +47,21 @@ final class Place {
         }
         Location stale = best;
         try {
-            lm.getCurrentLocation(LocationManager.NETWORK_PROVIDER, null, c.getMainExecutor(), l -> {
-                if (l != null) cb.accept(remember(c, l));
-                else cb.accept(stale != null ? remember(c, stale) : saved(c));
-            });
+            if (android.os.Build.VERSION.SDK_INT >= 30) {
+                lm.getCurrentLocation(LocationManager.NETWORK_PROVIDER, null, c.getMainExecutor(), l -> {
+                    if (l != null) cb.accept(remember(c, l));
+                    else cb.accept(stale != null ? remember(c, stale) : saved(c));
+                });
+            } else { // Android 8-10
+                lm.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, new android.location.LocationListener() {
+                    @Override public void onLocationChanged(Location l) { cb.accept(remember(c, l)); }
+                    @Override public void onStatusChanged(String p, int s, android.os.Bundle b) { }
+                    @Override public void onProviderEnabled(String p) { }
+                    @Override public void onProviderDisabled(String p) {
+                        cb.accept(stale != null ? remember(c, stale) : saved(c));
+                    }
+                }, android.os.Looper.getMainLooper());
+            }
         } catch (RuntimeException e) {
             cb.accept(stale != null ? remember(c, stale) : saved(c));
         }
