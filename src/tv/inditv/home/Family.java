@@ -172,7 +172,14 @@ final class Family {
         }
 
         boolean has(int m) {
-            return from <= to ? m >= from && m < to : m >= from || m < to; // wraps past midnight
+            int f = from, t = to;
+            // The afternoon ends, and the evening aarti begins, 45 minutes before sunset; the
+            // evening lasts until at least an hour after the aarti.
+            int dusk = sunsetToday() - 45, after = sunsetToday() + AARTI_AFTER_SUNSET + 60;
+            if (this == DAY[1]) t = dusk;
+            if (this == DAY[2]) { f = dusk; t = Math.max(to, after); }
+            if (this == DAY[3]) f = Math.max(from, after);
+            return f <= t ? m >= f && m < t : m >= f || m < t; // wraps past midnight
         }
     }
 
@@ -263,26 +270,79 @@ final class Family {
         final int hour, minute;
         final boolean onByDefault;
         final Card card;
+        /** FIXED: at hour:minute. SUNSET / SUNRISE: that many minutes after the sun ({@link #minute}). */
+        final int by;
 
         Auto(String id, String label, String detail, int hour, int minute, boolean onByDefault, Card card) {
+            this(id, label, detail, FIXED, hour, minute, onByDefault, card);
+        }
+
+        Auto(String id, String label, String detail, int by, int hour, int minute, boolean onByDefault, Card card) {
             this.id = id;
             this.label = label;
             this.detail = detail;
+            this.by = by;
             this.hour = hour;
             this.minute = minute;
             this.onByDefault = onByDefault;
             this.card = card;
         }
 
+        /** Minutes after midnight on that day (month 0-based), rounded to 5 minutes for sun times. */
+        int minuteOn(int y, int m, int d) {
+            if (by == FIXED) return hour * 60 + minute;
+            int sun = Panchang.sunMinutes(y, m, d, by == SUNRISE, lat, lon);
+            return Math.round((sun + minute) / 5f) * 5;
+        }
+
+        int minuteToday() {
+            Calendar now = Calendar.getInstance();
+            return minuteOn(now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH));
+        }
+
+        /** "6:05 PM" today; for sun times, "sunset · 6:05 PM today". */
         String time() {
-            int h = hour % 12 == 0 ? 12 : hour % 12;
-            return h + ":" + (minute < 10 ? "0" : "") + minute + (hour < 12 ? " AM" : " PM");
+            int t = minuteToday(), h24 = t / 60 % 24, mm = t % 60;
+            int h = h24 % 12 == 0 ? 12 : h24 % 12;
+            String clock = h + ":" + (mm < 10 ? "0" : "") + mm + (h24 < 12 ? " AM" : " PM");
+            if (by == SUNSET) return "sunset (" + clock + " today)";
+            if (by == SUNRISE) return "sunrise (" + clock + " today)";
+            return clock;
         }
     }
 
+    static final int FIXED = 0, SUNSET = 1, SUNRISE = 2;
+
+    /** Where the sun is worked out: the TV's own place if indiTV knows it, else Ahmedabad. */
+    static double lat = 23.03, lon = 72.58;
+
+    static void usePlace(String latLon) {
+        try {
+            String[] p = latLon.split(",");
+            double a = Double.parseDouble(p[0]), o = Double.parseDouble(p[1]);
+            if (a > 6 && a < 37 && o > 68 && o < 98) { lat = a; lon = o; } // somewhere in India
+        } catch (Exception ignored) { }
+    }
+
+    /** Today's sunset and sunrise, minutes after midnight. */
+    static int sunsetToday() {
+        Calendar now = Calendar.getInstance();
+        return Panchang.sunMinutes(now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH), false, lat, lon);
+    }
+
+    static int sunriseToday() {
+        Calendar now = Calendar.getInstance();
+        return Panchang.sunMinutes(now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH), true, lat, lon);
+    }
+
+    /** Sandhya aarti: ten minutes after sunset (6:05 PM in November, about 7:35 PM in June). */
+    static final int AARTI_AFTER_SUNSET = 10;
+
     static final Auto[] AUTO = {
-            new Auto("auto.morning", "Morning Hanuman Chalisa", "Plays on YouTube if the TV is on", 6, 30, false, HANUMAN_CHALISA),
-            new Auto("auto.aarti", "Jay Adhyashakti Aarti", "Plays on YouTube if the TV is on", 19, 0, true, ADHYASHAKTI),
+            new Auto("auto.morning", "Morning Hanuman Chalisa", "Plays on YouTube at sunrise if the TV is on",
+                    SUNRISE, 0, 0, false, HANUMAN_CHALISA),
+            new Auto("auto.aarti", "Jay Adhyashakti Aarti", "Plays on YouTube 10 minutes after sunset if the TV is on",
+                    SUNSET, 0, AARTI_AFTER_SUNSET, true, ADHYASHAKTI),
             new Auto("auto.news", "Switch to Tata Play", "Opens HDMI 1 for the news", 20, 30, true, NEWS),
     };
 
@@ -331,7 +391,8 @@ final class Family {
 
         List<Card> out = new ArrayList<>();
         // The set moments come first while they are on: the 7 PM aarti, the 8:30 PM news.
-        if (pool.contains(ADHYASHAKTI) && m >= 18 * 60 + 30 && m < 19 * 60 + 45) out.add(ADHYASHAKTI);
+        int aarti = sunsetToday() + AARTI_AFTER_SUNSET;
+        if (pool.contains(ADHYASHAKTI) && m >= aarti - 30 && m < aarti + 75) out.add(ADHYASHAKTI);
         if (pool.contains(NEWS) && m >= 20 * 60 + 15 && m < 21 * 60 + 30) out.add(NEWS);
         // Then what the family comes back to at this time of day; the curated order breaks ties.
         List<Card> rest = new ArrayList<>(pool);

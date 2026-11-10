@@ -24,6 +24,14 @@ public final class PanchangCheck {
         boolean gu = "કારતક સુદ એકમ".equals(ny.labelGu()) && "વિ.સં. ૨૦૮૩".equals(ny.samvatGu()) && "બેસતું વર્ષ".equals(ny.festivalGu());
         System.out.println((gu ? "ok   " : "FAIL ") + ny.labelGu() + "  " + ny.samvatGu() + "  " + ny.festivalGu());
         if (!gu) failed++;
+        // Sunset in Ahmedabad on 10 Nov 2026 is 5:57 PM; the family's aarti that evening was at 6:05.
+        int set = Panchang.sunMinutes(2026, 10, 10, false);
+        int aarti = Math.round((set + 10) / 5f) * 5;
+        boolean sunOk = Math.abs(set - (17 * 60 + 57)) <= 2 && aarti == 18 * 60 + 5;
+        System.out.println((sunOk ? "ok   " : "FAIL ") + "sunset " + set / 60 + ":" + set % 60 + "  aarti " + aarti / 60 + ":" + aarti % 60);
+        if (!sunOk) failed++;
+        int june = Panchang.sunMinutes(2027, 5, 21, false);
+        System.out.println("     sunset 21 Jun 2027 " + june / 60 + ":" + june % 60 + "  aarti " + Math.round((june + 10) / 5f) * 5 / 60 + ":" + Math.round((june + 10) / 5f) * 5 % 60);
         if (failed > 0) {
             System.out.println(failed + " calendar check(s) failed");
             System.exit(1);

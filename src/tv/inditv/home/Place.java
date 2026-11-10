@@ -74,6 +74,11 @@ final class Place {
         return place;
     }
 
+    /** The TV's rounded place ("23.03,72.58"), or null if it has never been found. */
+    static String known(Context c) {
+        return saved(c);
+    }
+
     private static String saved(Context c) {
         String s = c.getSharedPreferences("haven", Context.MODE_PRIVATE).getString(KEY, null);
         return s != null && s.matches("-?\\d+\\.\\d+,-?\\d+\\.\\d+") ? s : null;

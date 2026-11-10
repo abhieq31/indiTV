@@ -28,6 +28,8 @@ final class Schedule {
     static void arm(Context c) {
         AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
         if (am == null) return;
+        String place = Place.known(c);
+        if (place != null) Family.usePlace(place); // sunset where the TV is
         for (int i = 0; i < Family.AUTO.length; i++) {
             Family.Auto a = Family.AUTO[i];
             PendingIntent pi = PendingIntent.getBroadcast(c, 4100 + i,
@@ -35,8 +37,24 @@ final class Schedule {
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             am.cancel(pi);
             if (!Family.autoOn(c, a)) continue;
-            am.setWindow(AlarmManager.RTC_WAKEUP, next(a.hour, a.minute), WINDOW_MS, pi);
+            am.setWindow(AlarmManager.RTC_WAKEUP, next(a), WINDOW_MS, pi);
         }
+    }
+
+    /** The next time this moment comes: today if still ahead, else tomorrow (with tomorrow's sun). */
+    static long next(Family.Auto a) {
+        for (int add = 0; add < 3; add++) {
+            Calendar day = Calendar.getInstance();
+            day.add(Calendar.DAY_OF_MONTH, add);
+            int min = a.minuteOn(day.get(Calendar.YEAR), day.get(Calendar.MONTH), day.get(Calendar.DAY_OF_MONTH));
+            day.set(Calendar.HOUR_OF_DAY, 0);
+            day.set(Calendar.MINUTE, 0);
+            day.set(Calendar.SECOND, 0);
+            day.set(Calendar.MILLISECOND, 0);
+            long at = day.getTimeInMillis() + min * 60_000L;
+            if (at > System.currentTimeMillis() + 5_000) return at;
+        }
+        return next(a.hour, a.minute);
     }
 
     /** The next time it is hour:minute, today or tomorrow. */

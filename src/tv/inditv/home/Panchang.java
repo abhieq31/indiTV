@@ -293,6 +293,30 @@ final class Panchang {
         return c.getTimeInMillis() / 86_400_000.0 + 2440587.5 + hoursUtc / 24.0;
     }
 
+    /**
+     * Sunrise or sunset at a place, in minutes after midnight India time (NOAA's short formula,
+     * good to a minute or two). {@code month} 0-based, as in Calendar.
+     */
+    static int sunMinutes(int y, int m, int d, boolean rise, double lat, double lon) {
+        Calendar c = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        c.clear();
+        c.set(y, m, d);
+        double g = 2 * Math.PI / 365 * (c.get(Calendar.DAY_OF_YEAR) - 1);
+        double eqt = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g)
+                - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+        double decl = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g) - 0.006758 * Math.cos(2 * g)
+                + 0.000907 * Math.sin(2 * g) - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
+        double la = Math.toRadians(lat);
+        double x = Math.cos(Math.toRadians(90.833)) / (Math.cos(la) * Math.cos(decl)) - Math.tan(la) * Math.tan(decl);
+        double ha = Math.toDegrees(Math.acos(Math.max(-1, Math.min(1, x))));
+        double utc = 720 - 4 * (lon + (rise ? ha : -ha)) - eqt;
+        return (int) Math.round(utc + 330); // IST is UTC+5:30
+    }
+
+    static int sunMinutes(int y, int m, int d, boolean rise) {
+        return sunMinutes(y, m, d, rise, LAT, LON);
+    }
+
     /** Sunrise in Ahmedabad (NOAA's short formula), as a Julian day. */
     private static double sunriseJd(int y, int m, int d) {
         Calendar c = Calendar.getInstance(TimeZone.getTimeZone("UTC"));

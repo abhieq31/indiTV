@@ -37,9 +37,9 @@ What is watched stays on the TV (a few counts per video; see
 | Time | The pool |
 |---|---|
 | 4:30 AM – 11 AM | Hanuman Chalisa, Gayatri Mantra, Sundarkand, Aashapura Maa Aarti, Vaishnav Jan To, Bhagavad Gita in Gujarati, Ram Katha (Morari Bapu), Om Jai Jagdish Hare, Shrinathji dhun, Krishna bhajans |
-| 11 AM – 5:30 PM | Jay Vasavada (for senior citizens; on art), Bhagavad Gita, Ram Katha, Shahbuddin Rathod, Mayabhai Ahir, Rang Chhe Rajja, Vaishnav Jan To |
-| 5:30 PM – 8:15 PM | **Jay Adhyashakti Aarti** (first from 6:30), Aashapura Maa Aarti, Hanuman Chalisa, Om Jai Jagdish Hare, Shrinathji dhun, Sundarkand, Gayatri Mantra |
-| 8:15 PM – 4:30 AM | **News on Tata Play** (first until 9:30), Shahbuddin Rathod, Rang Chhe Rajja, Mayabhai Ahir, Jay Vasavada, Killol garba, Ram Katha; Naval's *How to Get Rich* on weekend nights |
+| 11 AM – 45 min before sunset | Jay Vasavada (for senior citizens; on art), Bhagavad Gita, Ram Katha, Shahbuddin Rathod, Mayabhai Ahir, Rang Chhe Rajja, Vaishnav Jan To |
+| 45 min before sunset – an hour after the aarti | **Jay Adhyashakti Aarti** (first from half an hour before the aarti), Aashapura Maa Aarti, Hanuman Chalisa, Om Jai Jagdish Hare, Shrinathji dhun, Sundarkand, Gayatri Mantra |
+| After the evening aarti – 4:30 AM | **News on Tata Play** (first until 9:30), Shahbuddin Rathod, Rang Chhe Rajja, Mayabhai Ahir, Jay Vasavada, Killol garba, Ram Katha; Naval's *How to Get Rich* on weekend nights |
 
 The row ends with **Darshan**, which starts the screensaver. **Favourites**: YouTube,
 JioHotstar, SonyLIV, Apple TV, Netflix, then **All apps**, which opens the full list (and
@@ -106,8 +106,8 @@ When the TV is on, indiTV does these by itself, over whatever is playing:
 
 | Time | What happens | Default |
 |---|---|---|
-| 6:30 AM | Hanuman Chalisa on YouTube | Off |
-| 7:00 PM | Jay Adhyashakti Aarti on YouTube | On |
+| Sunrise | Hanuman Chalisa on YouTube | Off |
+| 10 minutes after sunset | Jay Adhyashakti Aarti on YouTube (6:05 PM in November, about 7:35 PM in late June) | On |
 | 8:30 PM | Switch to Tata Play (HDMI 1) | On |
 
 Turn each one on or off in **indiTV Settings > Home screen**. If the TV is in standby nothing

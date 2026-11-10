@@ -232,7 +232,7 @@ public class HomeActivity extends Activity {
         tickId = sounds.load(this, R.raw.tick, 1);
         // Watch for "optimiser" apps resetting indiTV's settings, even while indiTV isn't running.
         Keeper.schedule(this);
-        Schedule.arm(this); // the 7 PM aarti and 8:30 PM Tata Play (Family.java)
+        Schedule.arm(this); // the aarti after sunset and 8:30 PM Tata Play (Family.java)
         buildLayout();
         root.getViewTreeObserver().addOnDrawListener(() -> Timing.mark("first frame"));
 
