@@ -56,6 +56,8 @@ final class Family {
     }
 
     private static final String[] NONE = {};
+    /** For {@code apps}: open Google TV's search for the card's words (it lists every app that has them). */
+    private static final String[] GOOGLE_SEARCH = {"google-search"};
 
     static final Card HANUMAN_CHALISA = new Card("chalisa", "Hanuman Chalisa", "હનુમાન ચાલીસા", "Mummy",
             "hanuman chalisa", "", 0, NONE, "morning-hanuman-in-meditation", 0xFFB5651D);
@@ -73,10 +75,17 @@ final class Family {
             "gujarati comedy natak", "", 0, NONE, "night-moonlit-lotus-lake", 0xFF3C7A55);
     static final Card GUJARATI_SONGS = new Card("songs", "Gujarati Songs", "ગુજરાતી ગીતો", "Everyone",
             "gujarati songs", "", 0, NONE, "day-sunset-together", 0xFF9C4A6B);
-    static final Card AOT = new Card("aot", "Attack on Titan", "Anime", "Little brother",
+    static final Card AOT = new Card("aot", "Attack on Titan", "એનિમે · Anime", "Little brother",
             "attack on titan", "", 0, new String[]{"com.crunchyroll.crunchyroid", "com.netflix.ninja"}, null, 0xFF5A3A2E);
-    static final Card SHORTS = new Card("shorts", "YouTube Shorts", "Shorts", "Little brother",
+    static final Card SHORTS = new Card("shorts", "YouTube Shorts", "શોર્ટ્સ · Shorts", "Little brother",
             "", "https://www.youtube.com/shorts", 0, NONE, null, 0xFFCC2B2B);
+    static final Card NETFLIX = new Card("netflix", "Netflix", "ફિલ્મો · Movies & series", "Everyone",
+            "", "", 0, new String[]{"com.netflix.ninja"}, null, 0xFF8E1B1F);
+    static final Card FAMILY_MOVIE = new Card("movie", "Gujarati Movie Night", "ગુજરાતી ફિલ્મ", "Everyone",
+            "gujarati movies", "", 0, GOOGLE_SEARCH, "day-sunset-together", 0xFF6E3B8C);
+    /** Opens the Darshan screensaver straight away, for when guests are in the room. */
+    static final Card DARSHAN = new Card("darshan", "Darshan", "દર્શન · screensaver", "For guests",
+            "", "", 0, NONE, "night-vishnu-among-the-stars", 0xFF2A2350);
 
     /** A part of the day and the cards that come first in it. Times are 24-hour, start inclusive. */
     private static final class Slot {
@@ -98,15 +107,60 @@ final class Family {
 
     private static final Slot[] DAY = {
             new Slot(4, 30, 11, 0, "Morning prayers", HANUMAN_CHALISA, MORNING_AARTI, BHAJAN),
-            new Slot(11, 0, 18, 45, "Daytime", BHAJAN, SHORTS, AOT),
+            new Slot(11, 0, 18, 45, "Daytime", BHAJAN, GUJARATI_SONGS),
             new Slot(18, 45, 20, 15, "Evening aarti", ADHYASHAKTI),
             new Slot(20, 15, 22, 0, "News time", NEWS, GUJARATI_NEWS),
             new Slot(22, 0, 4, 30, "Late night", GUJARATI_FUN, GUJARATI_SONGS),
     };
 
-    /** Everything, in the order it fills the row after the current part of the day's cards. */
-    private static final Card[] ALL = {ADHYASHAKTI, NEWS, HANUMAN_CHALISA, MORNING_AARTI, GUJARATI_FUN, AOT,
-            SHORTS, BHAJAN, GUJARATI_SONGS, GUJARATI_NEWS};
+    /**
+     * The elders' cards (Papa, Mummy, Dada, Ba), in the order they fill the row after the current
+     * part of the day's cards. Kept short on purpose: this is what's on screen most days.
+     */
+    private static final Card[] ELDERS = {ADHYASHAKTI, NEWS, HANUMAN_CHALISA, BHAJAN, GUJARATI_FUN, GUJARATI_SONGS};
+
+    /** The weekend / holiday row, when the young ones are home too. */
+    static final Card[] WEEKEND = {AOT, SHORTS, NETFLIX, FAMILY_MOVIE};
+
+    // ------------------------------------------------------------------ who's home
+
+    /**
+     * Holidays when everyone is home, besides Saturdays and Sundays, as "yyyy-MM-dd"
+     * (e.g. "2027-03-22"). On the TV you can also turn on indiTV Settings > Home screen >
+     * Holiday today; it switches itself off at midnight.
+     */
+    static final String[] HOLIDAYS = {};
+
+    /** Weekdays get the simple home (elders); weekends and holidays add the young ones' row. */
+    static boolean everyoneHome(Context c) {
+        Calendar now = Calendar.getInstance();
+        int d = now.get(Calendar.DAY_OF_WEEK);
+        if (d == Calendar.SATURDAY || d == Calendar.SUNDAY) return true;
+        String today = today();
+        for (String h : HOLIDAYS) if (h.equals(today)) return true;
+        return today.equals(c.getSharedPreferences("haven", Context.MODE_PRIVATE).getString("holidayDate", ""));
+    }
+
+    static boolean holidayToday(Context c) {
+        return today().equals(c.getSharedPreferences("haven", Context.MODE_PRIVATE).getString("holidayDate", ""));
+    }
+
+    static void setHolidayToday(Context c, boolean on) {
+        c.getSharedPreferences("haven", Context.MODE_PRIVATE).edit().putString("holidayDate", on ? today() : "").apply();
+    }
+
+    static String today() {
+        return new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ROOT).format(new java.util.Date());
+    }
+
+    /** A Gujarati greeting for the time of day, shown above the first row. */
+    static String greeting() {
+        int h = minuteOfDay() / 60;
+        if (h >= 4 && h < 11) return "સુપ્રભાત";       // Good morning
+        if (h >= 11 && h < 17) return "જય શ્રી કૃષ્ણ";  // Jai Shri Krishna
+        if (h >= 17 && h < 21) return "શુભ સંધ્યા";     // Good evening
+        return "શુભ રાત્રિ";                             // Good night
+    }
 
     /** Favourites on first start: whichever are installed, in this order. */
     static final String[] DOCK = {
@@ -185,7 +239,8 @@ final class Family {
             if (!s.has(m)) continue;
             for (Card c : s.cards) if (!out.contains(c)) { out.add(c); nowOut.add(c); }
         }
-        for (Card c : ALL) if (!out.contains(c)) out.add(c);
+        for (Card c : ELDERS) if (!out.contains(c)) out.add(c);
+        out.add(DARSHAN);
         return out;
     }
 
@@ -206,7 +261,7 @@ final class Family {
             return new Intent("com.android.tv.action.VIEW_INPUTS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
         for (String pkg : card.apps) {
-            if (pkg.equals("com.netflix.ninja") || pm.getLaunchIntentForPackage(pkg) == null
+            if (pkg.equals("com.netflix.ninja") && !card.query.isEmpty() || pm.getLaunchIntentForPackage(pkg) == null
                     && pm.getLeanbackLaunchIntentForPackage(pkg) == null) continue;
             Intent i = pm.getLeanbackLaunchIntentForPackage(pkg);
             if (i == null) i = pm.getLaunchIntentForPackage(pkg);

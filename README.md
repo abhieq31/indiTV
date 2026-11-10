@@ -2,8 +2,9 @@
 
 A home screen for Indian family TVs, made for a TCL 55" Google TV. It follows the family's day:
 aarti and Hanuman Chalisa in the morning, Jay Adhyashakti Aarti at 7 PM, the news on Tata Play
-(HDMI 1) at 8:30 PM, and Gujarati entertainment on YouTube late at night, with devotional
-wallpapers behind it all.
+(HDMI 1) at 8:30 PM, and Gujarati entertainment on YouTube late at night. Weekdays get a simple
+home for the elders; weekends and holidays open up for everyone. When the TV rests, **Darshan**
+fills the room with drifting devotional paintings, rising diya sparks and the verse for each one.
 
 indiTV is a fork of [Haven](https://github.com/joydeepsjce/haven-tv) (MIT), a fast, ad-free
 Google TV launcher, with ideas from other open-source TV launchers:
@@ -16,35 +17,65 @@ wallpapers) and [Glass TV](https://github.com/aqmangge/glass-tv-home) (a home fo
 **Download:** [inditv.apk](https://github.com/abhieq31/indiTV/releases/latest/download/inditv.apk)
 · [All releases](https://github.com/abhieq31/indiTV/releases)
 
-## What's on the home screen
+## Two homes in one
 
-Top to bottom:
+Most days the TV is for **Papa, Mummy, Dada and Ba**, so on weekdays indiTV shows a
+**simple home** with only three things on it:
 
-1. **Right now** changes through the day. The cards marked **NOW** come first:
+1. **Right now**, with large cards that read from across the room, in Gujarati first and English
+   underneath. Above it is a greeting for the time of day (સુપ્રભાત, જય શ્રી કૃષ્ણ, શુભ સંધ્યા,
+   શુભ રાત્રિ). The cards marked **NOW** come first:
 
    | Time | Cards |
    |---|---|
-   | 4:30 AM – 11 AM | Hanuman Chalisa, Morning Aarti, Bhajan & Satsang (Mummy) |
-   | 11 AM – 6:45 PM | YouTube, Bhajan & Satsang, YouTube Shorts, Attack on Titan |
+   | 4:30 AM – 11 AM | Hanuman Chalisa, Morning Aarti, Bhajan & Satsang |
+   | 11 AM – 6:45 PM | YouTube, Bhajan & Satsang, Gujarati Songs |
    | 6:45 PM – 8:15 PM | **Jay Adhyashakti Aarti** (first card, so Home then OK plays it) |
    | 8:15 PM – 10 PM | **News on Tata Play** (HDMI 1), Gujarati News Live |
    | 10 PM – 4:30 AM | Gujarati Comedy & Natak, Gujarati Songs |
 
-   The rest of the family's cards follow, so the little brother's **Attack on Titan** and
-   **YouTube Shorts** are always one press away. Attack on Titan opens Crunchyroll if it's
-   installed, otherwise Google TV's search, which shows every app that has it.
-2. **Up next**: what you were watching, with Resume.
-3. **Favourites**: YouTube, JioHotstar, Prime Video, Netflix, Apple TV, then SonyLIV,
-   Crunchyroll, ZEE5 and JioTV if installed. Disney's films and shows are inside JioHotstar in
-   India, so there's no separate Disney tile unless the Disney+ app is installed.
-4. **Inputs**: HDMI 1 (Tata Play) first.
-5. **Apps**: everything else.
+   The row ends with **Darshan**, which starts the screensaver straight away.
+2. **Favourites**: YouTube, JioHotstar, Prime Video, Netflix, Apple TV, then SonyLIV.
+   Disney's films and shows are inside JioHotstar in India.
+3. **Apps**: everything else, further down.
 
-**Wallpapers:** 11 devotional paintings are built in. Morning shows Hanuman, Krishna and the
-Wheel of Dharma; daytime shows Radha-Krishna and the Chariot of Fire; night shows Vishnu Among
-the Stars and the Moonlit Lotus Lake. They change every 45 seconds and blur while you use the
-remote. You can switch to Bing or Wikimedia photos, add your own, or use a Projectivy plugin in
-indiTV Settings > Wallpaper. The screensaver shows them too.
+On **Saturdays, Sundays and holidays**, when all four adults and the young ones are home, it adds:
+
+- **Weekend · everyone's home**: Attack on Titan, YouTube Shorts, Netflix and a Gujarati
+  Movie Night. Attack on Titan opens Crunchyroll if it's installed, otherwise Google TV's search,
+  which shows every app that has it.
+- **Up next**, **Top picks** and **Recent**, for picking up where someone left off.
+
+The switch happens by itself at midnight. For a festival on a weekday, turn on
+**indiTV Settings > Home screen > Holiday today** (it turns itself off at midnight), or add the
+date to `HOLIDAYS` in [Family.java](src/tv/inditv/home/Family.java). To always show
+everything, turn off **Simple home on weekdays**.
+
+**Wallpapers:** 11 devotional paintings are built in, chosen by the time of day. Mornings show
+Hanuman, Krishna, the Wheel of Dharma and the dawn; daytime shows the Gita chariot, Radha-Krishna
+and Shiva-Parvati at sunset; nights show Vishnu among the stars, Shiva-Parvati on the moonlit
+lake, and little Krishna and Shiva asleep under the stars.
+
+## Darshan, the screensaver
+
+When nothing is playing, the TV shows **Darshan**:
+
+- the paintings drift slowly and dissolve into one another, about every 40 seconds;
+- golden sparks rise from the bottom of the screen, like the glow of a diya;
+- each painting's verse appears beneath it in its own script, with its meaning in English:
+  the Hanuman Chalisa with Hanuman, *karmanye vadhikaraste* with the Wheel of Dharma,
+  *yada yada hi dharmasya* with the chariot, *shantakaram bhujagashayanam* with Vishnu,
+  *Om Namah Shivaya* with Shiva and Parvati, *શ્રી કૃષ્ણઃ શરણં મમ* with Radha-Krishna on the swing,
+  and more;
+- a small ॐ breathes in the corner, and the clock and the date in Gujarati sit at the lower right;
+- optionally, a soft **tanpura** drone (Pa Sa Sa Sa, tuned to C#), made on the TV itself.
+
+indiTV makes Darshan the TV's screensaver by itself once Set up is done. For guests, open it any
+time from the **Darshan** card on Home; any button on the remote closes it, and the volume
+buttons still work. Options are in **indiTV Settings > Wallpaper**: Show Darshan now, Use Darshan
+as the screensaver, Verses on Darshan, and Tanpura on Darshan (off by default).
+To change a verse or add one for a new painting, edit
+[Mantras.java](src/tv/inditv/home/Mantras.java).
 
 ## Automatic times
 
@@ -121,7 +152,9 @@ typing.
    - **Continue watching**, **Weather** and **Recent apps**: choose **Allow** when asked.
    - **Install updates**: lets indiTV install its own updates; you confirm each one.
    - **Keep the Home button on**: so TCL's *Safety Guard* cleaner can't switch it off.
-6. **Press Home.** indiTV opens. The 7 PM aarti and 8:30 PM news switch are already on.
+6. **Press Home.** indiTV opens. The 7 PM aarti and 8:30 PM news switch are already on, and
+   Darshan is the screensaver. To choose how soon it starts: Settings > System > Ambient mode
+   (or Screen saver) > When to start.
 7. **On the TV, once:** Settings > Channels & Inputs > Inputs: rename HDMI 1 to **Tata Play**
    and turn on **HDMI-CEC** (TCL calls it **T-Link**), so one remote can control the TV's power
    and volume with the Tata Play box.

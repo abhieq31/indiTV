@@ -110,7 +110,7 @@ public class HomeActivity extends Activity {
     private ScrollView scroller;
     private HorizontalScrollView dockScroll;
     private LinearLayout dockRow, grid, overlayGrid, topBar;
-    private Section nowSec, upNextSec, recentSec, recoSec, dockSec, inputsSec;
+    private Section nowSec, weekendSec, upNextSec, recentSec, recoSec, dockSec, inputsSec;
     /** What the Right now row shows, so it is only rebuilt when the part of the day changes. */
     private String nowShown = "";
     private final Runnable nowTick = new Runnable() {
@@ -249,6 +249,9 @@ public class HomeActivity extends Activity {
         ui.postDelayed(upNextTurn, 5000);
         ui.removeCallbacks(nowTick);
         nowTick.run();
+        // Once, as soon as Set up has given indiTV the permission: Darshan becomes the screensaver.
+        android.content.SharedPreferences dp0 = getSharedPreferences("haven", MODE_PRIVATE);
+        if (!dp0.getBoolean("darshanSet", false) && setDarshanScreensaver()) dp0.edit().putBoolean("darshanSet", true).apply();
         long stale = SystemClock.elapsedRealtime() - lastWeather;
         ui.removeCallbacks(weatherTick);
         ui.postDelayed(weatherTick, Math.max(0, WEATHER_EVERY_MS - stale));
@@ -435,13 +438,23 @@ public class HomeActivity extends Activity {
             ROW_FAVOURITES = "favourites", ROW_INPUTS = "inputs", ROW_NOW = "now";
 
     private boolean rowOn(String row) {
-        return !store.hiddenRows.contains(row);
+        if (store.hiddenRows.contains(row)) return false;
+        // Weekdays: the simple home for Papa, Mummy, Dada and Ba (Right now, Favourites, Apps).
+        if (simpleNow() && (ROW_UPNEXT.equals(row) || ROW_PICKS.equals(row) || ROW_RECENT.equals(row)
+                || ROW_INPUTS.equals(row))) return false;
+        return true;
+    }
+
+    /** True on weekdays (not holidays) while Simple home on weekdays is on. */
+    private boolean simpleNow() {
+        return getSharedPreferences("haven", MODE_PRIVATE).getBoolean("simpleWeekdays", true)
+                && !Family.everyoneHome(this);
     }
 
     /** Every row of Home, top to bottom: the visible sections, then each row of the app grid. */
     private List<LinearLayout> homeRows() {
         List<LinearLayout> rows = new ArrayList<>();
-        for (Section s : new Section[]{nowSec, upNextSec, recoSec, recentSec, dockSec, inputsSec}) {
+        for (Section s : new Section[]{nowSec, weekendSec, upNextSec, recoSec, recentSec, dockSec, inputsSec}) {
             if (s.box.getVisibility() == View.VISIBLE && s.row.getChildCount() > 0) rows.add(s.row);
         }
         for (int i = 0; i < grid.getChildCount(); i++) rows.add((LinearLayout) grid.getChildAt(i));
@@ -492,7 +505,7 @@ public class HomeActivity extends Activity {
     private void goHome() {
         scroller.smoothScrollTo(0, 0);
         View first = null;
-        for (Section s : new Section[]{nowSec, upNextSec, recoSec, recentSec, dockSec, inputsSec}) {
+        for (Section s : new Section[]{nowSec, weekendSec, upNextSec, recoSec, recentSec, dockSec, inputsSec}) {
             s.scroll.smoothScrollTo(0, 0);
             if (first == null && s.box.getVisibility() == View.VISIBLE) first = firstTile(s.row);
         }
@@ -541,6 +554,8 @@ public class HomeActivity extends Activity {
         // Home rows, top to bottom: Up next, Top picks, Recent, Favourites (dock), Inputs, Apps.
         // Up next: one glass card for what you were watching (in place of a Continue watching row).
         nowSec = new Section("Right now");
+        nowSec.title.setTextSize(20); // the elders' row: larger
+        weekendSec = new Section("Weekend · everyone's home");
         upNextSec = new Section(null);
         recentSec = new Section("Recent");
         recoSec = new Section("Top picks for you");
@@ -548,11 +563,11 @@ public class HomeActivity extends Activity {
         inputsSec = new Section("Inputs");
         dockRow = dockSec.row;
         dockScroll = dockSec.scroll;
-        for (Section s : new Section[]{nowSec, upNextSec, recoSec, recentSec, dockSec, inputsSec}) {
+        for (Section s : new Section[]{nowSec, weekendSec, upNextSec, recoSec, recentSec, dockSec, inputsSec}) {
             if (s != dockSec) s.box.setVisibility(View.GONE);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
             // Cards keep room below for a name that only shows on focus; tuck the next row up into it.
-            if (s != upNextSec && s != nowSec) lp.bottomMargin = -dp(20);
+            if (s != upNextSec && s != nowSec && s != weekendSec) lp.bottomMargin = -dp(20);
             content.addView(s.box, lp);
         }
 
@@ -1034,13 +1049,22 @@ public class HomeActivity extends Activity {
             return;
         }
         String slot = Family.slotName();
-        String key = slot + "#" + entries.containsKey(Family.YOUTUBE);
+        boolean simple = simpleNow();
+        String key = slot + "#" + entries.containsKey(Family.YOUTUBE) + "#" + simple + "#" + Family.greeting();
         if (key.equals(nowShown) && nowSec.row.getChildCount() > 0) return;
+        boolean modeChanged = !nowShown.isEmpty() && !nowShown.contains("#" + simple + "#");
         nowShown = key;
+        if (modeChanged) { // weekday <-> weekend / holiday: the other rows come and go too
+            rebuild();
+            loadRecents();
+            loadContinue();
+            return; // rebuild() calls fillNow() again
+        }
+        fillWeekend();
         View f = getCurrentFocus();
         boolean hadFocus = f != null && f.getTag() instanceof String && ((String) f.getTag()).startsWith("now:");
         nowSec.row.removeAllViews();
-        if (nowSec.title != null) nowSec.title.setText(slot.isEmpty() ? "Right now" : "Right now · " + slot);
+        if (nowSec.title != null) nowSec.title.setText(Family.greeting() + (slot.isEmpty() ? "" : "  ·  " + slot));
         List<Family.Card> now = new ArrayList<>();
         List<Family.Card> cards = Family.cardsNow(now);
         // YouTube is what's on most of the time: it comes first, except at aarti and news time.
@@ -1048,15 +1072,30 @@ public class HomeActivity extends Activity {
         for (Family.Card c : now) timed |= c == Family.ADHYASHAKTI || c == Family.NEWS;
         Apps.Entry yt = entries.get(Family.YOUTUBE);
         if (yt != null && !timed) nowSec.add(rowCell(yt, nowSec, "now:"));
-        for (Family.Card c : cards) nowSec.add(nowCell(c, now.contains(c)));
+        for (Family.Card c : cards) nowSec.add(nowCell(c, now.contains(c), true));
         if (yt != null && timed) nowSec.add(rowCell(yt, nowSec, "now:"));
         nowSec.box.setVisibility(View.VISIBLE);
         if (hadFocus || !userMoved) goHome();
     }
 
-    /** A family card: a picture (or colour), its name in English and Gujarati, and who it's for. */
-    private View nowCell(Family.Card card, boolean isNow) {
-        final int w = 192, h = 108;
+    /** Weekends and holidays: the young ones' row (Attack on Titan, Shorts, Netflix, a family movie). */
+    private void fillWeekend() {
+        weekendSec.row.removeAllViews();
+        if (simpleNow() || !rowOn(ROW_NOW)) {
+            weekendSec.box.setVisibility(View.GONE);
+            return;
+        }
+        for (Family.Card c : Family.WEEKEND) weekendSec.add(nowCell(c, false, false));
+        weekendSec.box.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * A family card: a picture (or colour), its name in Gujarati and English, and who it's for.
+     * {@code big}: the elders' row, with larger cards and type that reads from across the room.
+     */
+    private View nowCell(Family.Card card, boolean isNow, boolean big) {
+        final int w = big ? 240 : 192, h = big ? 135 : 108;
+        final Section sec = big ? nowSec : weekendSec;
         LinearLayout cell = column();
         cell.setGravity(Gravity.CENTER_HORIZONTAL);
         cell.setClipChildren(false);
@@ -1078,14 +1117,16 @@ public class HomeActivity extends Activity {
                 new int[]{0xCC000000, 0x55000000, 0x00000000}));
         tile.addView(scrim, new FrameLayout.LayoutParams(-1, dp(72), Gravity.BOTTOM));
         LinearLayout words = column();
-        TextView name = Ui.text(this, card.title, 14, Ui.semibold);
-        name.setMaxLines(2);
-        name.setEllipsize(TextUtils.TruncateAt.END);
-        TextView gu = Ui.text(this, card.subtitle, 11, Ui.regular);
-        gu.setTextColor(0xE6FFFFFF);
+        // Gujarati first and larger for the elders; English underneath.
+        TextView gu = Ui.text(this, card.subtitle, big ? 19 : 15, Ui.semibold);
         gu.setSingleLine(true);
-        words.addView(name, new LinearLayout.LayoutParams(-2, -2));
+        gu.setEllipsize(TextUtils.TruncateAt.END);
+        TextView name = Ui.text(this, card.title, big ? 13 : 12, Ui.regular);
+        name.setTextColor(0xE6FFFFFF);
+        name.setSingleLine(true);
+        name.setEllipsize(TextUtils.TruncateAt.END);
         words.addView(gu, new LinearLayout.LayoutParams(-2, -2));
+        words.addView(name, new LinearLayout.LayoutParams(-2, -2));
         FrameLayout.LayoutParams wlp = new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM | Gravity.START);
         wlp.setMargins(dp(10), 0, dp(10), dp(8));
         tile.addView(words, wlp);
@@ -1105,6 +1146,7 @@ public class HomeActivity extends Activity {
         Ui.addGloss(tile, w, h);
         cell.addView(tile, new LinearLayout.LayoutParams(dp(w), dp(h)));
         TextView label = cardLabel(card.who);
+        label.setMaxWidth(dp(w));
         label.setGravity(Gravity.CENTER);
         cell.addView(label, new LinearLayout.LayoutParams(dp(w), -2) {{ topMargin = dp(9); }});
         tile.setOnFocusChangeListener((v, has) -> {
@@ -1112,9 +1154,13 @@ public class HomeActivity extends Activity {
             label.animate().alpha(has ? 1f : 0f).translationY(has ? dp(4) : 0).setDuration(180).start();
             if (!has) return;
             tick();
-            nowSec.follow(cell);
+            sec.follow(cell);
         });
         tile.setOnClickListener(v -> {
+            if (card == Family.DARSHAN) {
+                startActivity(new Intent(this, DarshanActivity.class));
+                return;
+            }
             Intent i = Family.intent(this, card);
             try {
                 if (i == null) throw new IllegalStateException();
@@ -2620,6 +2666,18 @@ public class HomeActivity extends Activity {
             store.save();
             Ui.setAccent(store.dynColor ? Ui.accentFrom(photoColor) : Color.WHITE);
         }));
+        // Darshan screensaver
+        wall.add(SettingsPanel.action("Show Darshan now", "The devotional screensaver, until you press a button",
+                () -> "›", () -> startActivity(new Intent(this, DarshanActivity.class))));
+        wall.add(SettingsPanel.action("Use Darshan as the screensaver", isDarshanScreensaver()
+                        ? "It's on. The TV starts it when nothing is playing" : "Replaces the TV's Ambient mode",
+                () -> isDarshanScreensaver() ? "On" : "›", this::useDarshan));
+        wall.add(SettingsPanel.toggle("Verses on Darshan", "Each painting's mantra or shloka, with its meaning",
+                () -> prefs.getBoolean(Darshan.PREF_VERSES, true),
+                () -> prefs.edit().putBoolean(Darshan.PREF_VERSES, !prefs.getBoolean(Darshan.PREF_VERSES, true)).apply()));
+        wall.add(SettingsPanel.toggle("Tanpura on Darshan", "A soft drone while Darshan is on",
+                () -> prefs.getBoolean(Darshan.PREF_SOUND, false),
+                () -> prefs.edit().putBoolean(Darshan.PREF_SOUND, !prefs.getBoolean(Darshan.PREF_SOUND, false)).apply()));
         out.add(new SettingsPanel.Section(SECTIONS[0], wall));
 
         // Home screen
@@ -2651,6 +2709,21 @@ public class HomeActivity extends Activity {
                 loadContinue();
             }));
         }
+        android.content.SharedPreferences fp = getSharedPreferences("haven", MODE_PRIVATE);
+        home.add(SettingsPanel.toggle("Simple home on weekdays", "Only Right now, Favourites and Apps; weekends and holidays show everything",
+                () -> fp.getBoolean("simpleWeekdays", true), () -> {
+                    fp.edit().putBoolean("simpleWeekdays", !fp.getBoolean("simpleWeekdays", true)).apply();
+                    rebuild();
+                    loadRecents();
+                    loadContinue();
+                }));
+        home.add(SettingsPanel.toggle("Holiday today", "Everyone's home: show the weekend rows until midnight",
+                () -> Family.holidayToday(this), () -> {
+                    Family.setHolidayToday(this, !Family.holidayToday(this));
+                    rebuild();
+                    loadRecents();
+                    loadContinue();
+                }));
         for (Family.Auto a : Family.AUTO) {
             home.add(SettingsPanel.toggle(a.label + " at " + a.time(), a.detail, () -> Family.autoOn(this, a), () -> {
                 Family.setAuto(this, a, !Family.autoOn(this, a));
@@ -2778,6 +2851,34 @@ public class HomeActivity extends Activity {
                 + (Tmdb.available() ? "\nNetflix titles in Top picks: this product uses the TMDB API but is not endorsed or certified by TMDB." : "")));
         out.add(new SettingsPanel.Section(SECTIONS[4], about));
         return out;
+    }
+
+    private static final String DARSHAN_COMPONENT = "tv.inditv.home/tv.inditv.home.DarshanDream";
+
+    private boolean isDarshanScreensaver() {
+        String v = android.provider.Settings.Secure.getString(getContentResolver(), "screensaver_components");
+        return v != null && v.contains("DarshanDream");
+    }
+
+    /** Makes Darshan the TV's screensaver directly when indiTV may (after Set up), else opens the TV's page. */
+    private void useDarshan() {
+        if (setDarshanScreensaver()) {
+            Toast.makeText(this, "Darshan is now the screensaver", Toast.LENGTH_SHORT).show();
+            settings.refresh();
+            return;
+        }
+        openTvSetting(android.provider.Settings.ACTION_DREAM_SETTINGS, "Choose indiTV Darshan");
+    }
+
+    private boolean setDarshanScreensaver() {
+        if (!has(android.Manifest.permission.WRITE_SECURE_SETTINGS)) return false;
+        try {
+            android.provider.Settings.Secure.putString(getContentResolver(), "screensaver_components", DARSHAN_COMPONENT);
+            android.provider.Settings.Secure.putInt(getContentResolver(), "screensaver_enabled", 1);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /** {id, name} for each wallpaper source: the daily photos, yours, then plugins. */

@@ -144,10 +144,19 @@
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
+        <!-- Darshan on demand (the Darshan card on Home), for guests. -->
+        <activity
+            android:name=".DarshanActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:screenOrientation="landscape"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|smallestScreenSize|screenLayout|uiMode|density"
+            android:theme="@style/Theme.indiTV" />
+
         <service
-            android:name=".HavenDream"
+            android:name=".DarshanDream"
             android:exported="true"
-            android:label="indiTV wallpapers"
+            android:label="indiTV Darshan"
             android:permission="android.permission.BIND_DREAM_SERVICE">
             <intent-filter>
                 <action android:name="android.service.dreams.DreamService" />

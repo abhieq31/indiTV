@@ -26,6 +26,9 @@ if [ "$2" = "--remove" ]; then
 fi
 [ -n "$2" ] && "$ADB" -s "$TV" install -r "$2"
 
+# Darshan, indiTV's devotional screensaver, in place of Ambient mode.
+sh_tv settings put secure screensaver_components $PKG/$PKG.DarshanDream || true
+sh_tv settings put secure screensaver_enabled 1 || true
 # Restart the Home-button service and keep the layout backup if something resets settings.
 sh_tv pm grant $PKG android.permission.WRITE_SECURE_SETTINGS
 # Continue watching / Top picks: read the system TV provider, like the stock launcher does.
