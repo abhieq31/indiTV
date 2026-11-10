@@ -154,7 +154,7 @@ final class Family {
             new Slot(11, 0, 17, 30, "News and entertainment", TV9, SANDESH, GUJARATI_FUN, GUJARATI_SONGS),
             new Slot(17, 30, 20, 15, "Evening aarti", ADHYASHAKTI, ASHAPURA, HANUMAN_CHALISA, SUNDARKAND, KATHA),
             new Slot(20, 15, 4, 30, "News and entertainment", NEWS, TV9, SANDESH, GUJARATI_FUN, GUJARATI_SONGS),
-    }
+    };
 
     /**
      * The elders' cards (Papa, Mummy, Dada, Ba), in the order they fill the row after the current
@@ -300,10 +300,6 @@ final class Family {
             for (Card k : sl.cards) if (!out.contains(k)) out.add(k);
         }
         if (everyoneHome(c)) out.add(AOT); // the young ones are home
-        out.add(DARSHAN);
-        return out;
-    }
-        for (Card c : ELDERS) if (!out.contains(c)) out.add(c);
         out.add(DARSHAN);
         return out;
     }
