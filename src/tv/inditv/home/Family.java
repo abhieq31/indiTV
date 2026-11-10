@@ -47,6 +47,8 @@ final class Family {
          * plays; indiTV looks it up each time Home opens, so news is always today's. "" if none.
          */
         String channel = "";
+        /** 'P' prayer, 'T' talk, 'E' everything else: used to notice the family's habits (see Stats). */
+        char kind = 'E';
 
         Card live(String handle) {
             channel = handle;
@@ -121,6 +123,27 @@ final class Family {
     static final Card GITA = new Card("gita", "Bhagavad Gita in Gujarati", "Chapter 12 · Bhakti Yoga", "Everyone",
             "bhagavad gita gujarati", "https://www.youtube.com/watch?v=8YIN_Pw3svY", 0, NONE, null, 0xFF7A4E9C);
 
+    // More of the best: sung and spoken classics, and clean Gujarati humour.
+    static final Card GAYATRI = new Card("gayatri", "Gayatri Mantra · 108", "Anuradha Paudwal", "Everyone",
+            "gayatri mantra 108", "https://www.youtube.com/watch?v=nwRoHC83wx0", 0, NONE, null, 0xFFC98A2B);
+    static final Card VAISHNAV_JAN = new Card("vaishnavjan", "Vaishnav Jan To", "Lata Mangeshkar · Narsinh Mehta", "Everyone",
+            "vaishnav jan to", "https://www.youtube.com/watch?v=2Nls0ObfCWE", 0, NONE, null, 0xFF7A4E9C);
+    static final Card SHRINATHJI = new Card("shrinathji", "Shrinathji Dhun", "Shri Krishna Sharanam Mama", "Everyone",
+            "shrinathji dhun", "https://www.youtube.com/watch?v=6ZctKVSkjAQ", 0, NONE, null, 0xFF2A2350);
+    static final Card SHAHBUDDIN = new Card("shahbuddin", "Hasya Sammelan", "Shahbuddin Rathod", "Everyone",
+            "shahbuddin rathod", "https://www.youtube.com/watch?v=IGIiuOXQo5Q", 0, NONE, null, 0xFF3C7A55);
+    static final Card MAYABHAI = new Card("mayabhai", "Lok Dayro · Hasya Ras", "Mayabhai Ahir", "Everyone",
+            "mayabhai ahir dayro", "https://www.youtube.com/watch?v=N6FPffM-Z24", 0, NONE, null, 0xFF3C7A55);
+    /** For the young ones, on weekends. */
+    static final Card NAVAL = new Card("naval", "How to Get Rich", "Naval Ravikant", "The young ones",
+            "naval ravikant", "https://www.youtube.com/watch?v=1-TZqOsVCNM", 0, NONE, null, 0xFF22252B);
+
+    static {
+        for (Card c : new Card[]{HANUMAN_CHALISA, MORNING_AARTI, BHAJAN, ADHYASHAKTI, ASHAPURA, SUNDARKAND,
+                GAYATRI, VAISHNAV_JAN, SHRINATHJI}) c.kind = 'P';
+        for (Card c : new Card[]{KATHA, GITA, JV_SENIORS, JV_ART, NAVAL}) c.kind = 'T';
+    }
+
     /** The YouTube video id in a card's link ("LUx8wlA_dk8"), or null. */
     static String videoId(Card card) {
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("[?&]v=([A-Za-z0-9_-]{11})").matcher(card.video);
@@ -154,21 +177,21 @@ final class Family {
     }
 
     /**
-     * Mornings and evenings are for prayer; afternoons and nights for local news and
-     * entertainment. The row shows only the cards for this part of the day.
+     * Each part of the day has a pool of videos, best first. Home shows a handful of them: the
+     * ones the family keeps coming back to at that time rise to the front (see {@link Stats}),
+     * and one they haven't tried yet is offered each day.
      */
     private static final Slot[] DAY = {
-            new Slot(4, 30, 11, 0, "Morning prayers", HANUMAN_CHALISA, SUNDARKAND, ASHAPURA, GITA, KATHA),
-            new Slot(11, 0, 17, 30, "Think and learn", JV_SENIORS, GITA, KATHA, JV_ART, GUJARATI_FUN),
-            new Slot(17, 30, 20, 15, "Evening aarti", ADHYASHAKTI, ASHAPURA, HANUMAN_CHALISA, SUNDARKAND, MORNING_AARTI),
-            new Slot(20, 15, 4, 30, "Evening", NEWS, GUJARATI_FUN, JV_SENIORS, GUJARATI_SONGS),
+            new Slot(4, 30, 11, 0, "Morning prayers", HANUMAN_CHALISA, GAYATRI, SUNDARKAND, ASHAPURA, VAISHNAV_JAN,
+                    GITA, KATHA, MORNING_AARTI, SHRINATHJI, BHAJAN),
+            new Slot(11, 0, 17, 30, "Think and learn", JV_SENIORS, GITA, KATHA, SHAHBUDDIN, JV_ART, MAYABHAI,
+                    GUJARATI_FUN, VAISHNAV_JAN),
+            new Slot(17, 30, 20, 15, "Evening aarti", ADHYASHAKTI, ASHAPURA, HANUMAN_CHALISA, MORNING_AARTI, SHRINATHJI,
+                    SUNDARKAND, GAYATRI, BHAJAN),
+            new Slot(20, 15, 4, 30, "Evening", NEWS, SHAHBUDDIN, GUJARATI_FUN, MAYABHAI, JV_SENIORS, GUJARATI_SONGS, KATHA),
     };
-
-    /**
-     * The elders' cards (Papa, Mummy, Dada, Ba), in the order they fill the row after the current
-     * part of the day's cards. Kept short on purpose: this is what's on screen most days.
-     */
-    private static final Card[] ELDERS = {ADHYASHAKTI, NEWS, HANUMAN_CHALISA, BHAJAN, GUJARATI_FUN, GUJARATI_SONGS};
+    /** How many videos Home shows at once (then Darshan). Few on purpose. */
+    private static final int SHOWN = 5;
 
     /** The weekend / holiday row, when the young ones are home too. */
     static final Card[] WEEKEND = {AOT, SHORTS, NETFLIX, FAMILY_MOVIE};
@@ -299,13 +322,66 @@ final class Family {
     /** Cards for the row: this part of the day's first (marked as now), then the rest. */
     static List<Card> cardsNow(Context c) {
         int m = minuteOfDay();
+        int at = slotIndex();
+        List<Card> pool = new ArrayList<>();
+        if (at >= 0) for (Card k : DAY[at].cards) if (!pool.contains(k)) pool.add(k);
+        Calendar now = Calendar.getInstance();
+        int dow = now.get(Calendar.DAY_OF_WEEK);
+        if (at == 3 && (dow == Calendar.SATURDAY || dow == Calendar.SUNDAY)) pool.add(NAVAL);
+
         List<Card> out = new ArrayList<>();
-        for (Slot sl : DAY) {
-            if (!sl.has(m)) continue;
-            for (Card k : sl.cards) if (!out.contains(k)) out.add(k);
+        // The set moments come first while they are on: the 7 PM aarti, the 8:30 PM news.
+        if (pool.contains(ADHYASHAKTI) && m >= 18 * 60 + 30 && m < 19 * 60 + 45) out.add(ADHYASHAKTI);
+        if (pool.contains(NEWS) && m >= 20 * 60 + 15 && m < 21 * 60 + 30) out.add(NEWS);
+        // Then what the family comes back to at this time of day; the curated order breaks ties.
+        List<Card> rest = new ArrayList<>(pool);
+        rest.removeAll(out);
+        final int slot = at;
+        final double[] score = new double[rest.size()];
+        Integer[] order = new Integer[rest.size()];
+        for (int i = 0; i < order.length; i++) {
+            order[i] = i;
+            score[i] = Stats.score(c, rest.get(i), slot);
+        }
+        java.util.Arrays.sort(order, (a, b) -> score[a] != score[b] ? Double.compare(score[b], score[a]) : a - b);
+        for (int i = 0; i < order.length && out.size() < SHOWN - 1; i++) out.add(rest.get(order[i]));
+        // One more: something not tried yet (a different one each day), else the next favourite.
+        discover = null;
+        List<Card> untried = new ArrayList<>();
+        for (Card k : rest) if (!out.contains(k) && Stats.plays(c, k) == 0) untried.add(k);
+        if (!untried.isEmpty()) {
+            discover = untried.get(now.get(Calendar.DAY_OF_YEAR) % untried.size());
+            out.add(discover);
+        } else {
+            for (int i = 0; i < order.length && out.size() < SHOWN; i++) {
+                if (!out.contains(rest.get(order[i]))) out.add(rest.get(order[i]));
+            }
         }
         out.add(DARSHAN);
         return out;
+    }
+
+    /** The not-yet-tried video offered in the row just built, or null. */
+    static Card discover;
+
+    /** Which part of the day it is: 0 morning, 1 afternoon, 2 evening, 3 night. */
+    static int slotIndex() {
+        int m = minuteOfDay();
+        for (int i = 0; i < DAY.length; i++) if (DAY[i].has(m)) return i;
+        return -1;
+    }
+
+    /**
+     * A kind word about the habit, when there is one to notice: "Prayers on 5 of the last 7 days".
+     * Empty when there's nothing to say yet.
+     */
+    static String encouragement(Context c) {
+        int at = slotIndex();
+        boolean prayerTime = at == 0 || at == 2;
+        int days = Stats.daysWith(c, prayerTime ? 'P' : 'T');
+        if (days < 2) return "";
+        if (days == 7) return prayerTime ? "Prayers every day this week" : "A talk every day this week";
+        return (prayerTime ? "Prayers on " : "Talks on ") + days + " of the last 7 days";
     }
 
     /** Which wallpapers suit this time of day: "morning", "day" or "night". */

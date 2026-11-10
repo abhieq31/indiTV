@@ -1295,6 +1295,8 @@ public class HomeActivity extends Activity {
             try {
                 if (i == null) throw new IllegalStateException();
                 startActivity(i);
+                Stats.played(this, card, Math.max(0, Family.slotIndex())); // learn what the family watches, and when
+                nowShown = ""; // re-order the row next time Home shows
                 if (i.getPackage() != null) store.noteLaunch(i.getPackage());
             } catch (Exception ex) {
                 Toast.makeText(this, "Couldn't open " + card.title, Toast.LENGTH_SHORT).show();
