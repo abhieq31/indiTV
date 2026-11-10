@@ -73,10 +73,10 @@ final class Family {
             "", "", 1, NONE, null, 0xFF1F5FA8);
     static final Card GUJARATI_NEWS = new Card("gjnews", "Gujarati News Live", "YouTube", "Papa & Dada",
             "gujarati news live", "", 0, NONE, null, 0xFF2D6E8E);
-    static final Card GUJARATI_FUN = new Card("gujarati", "Gujarati Comedy", "YouTube", "Papa & Dada",
-            "gujarati comedy natak", "", 0, NONE, null, 0xFF3C7A55);
-    static final Card GUJARATI_SONGS = new Card("songs", "Gujarati Songs", "YouTube", "Everyone",
-            "gujarati songs", "", 0, NONE, null, 0xFF9C4A6B);
+    static final Card GUJARATI_FUN = new Card("gujarati", "Rang Chhe Rajja", "Siddharth Randeria · Comedy natak", "Papa & Dada",
+            "gujarati comedy natak", "https://www.youtube.com/watch?v=oieLUJIyT0Y", 0, NONE, null, 0xFF3C7A55);
+    static final Card GUJARATI_SONGS = new Card("songs", "Killol Nonstop Garba", "Kinjal Dave · Gujarati songs", "Everyone",
+            "gujarati songs", "https://www.youtube.com/watch?v=XN5MYcku-wQ", 0, NONE, null, 0xFF9C4A6B);
     static final Card AOT = new Card("aot", "Attack on Titan", "Anime", "Little brother",
             "attack on titan", "", 0, new String[]{"com.crunchyroll.crunchyroid", "com.netflix.ninja"}, null, 0xFF5A3A2E);
     static final Card SHORTS = new Card("shorts", "YouTube Shorts", "YouTube", "Little brother",
@@ -125,7 +125,7 @@ final class Family {
             new Slot(4, 30, 11, 0, "Morning prayers", HANUMAN_CHALISA, MORNING_AARTI, BHAJAN),
             new Slot(11, 0, 18, 45, "Bhajans", BHAJAN, GUJARATI_SONGS),
             new Slot(18, 45, 20, 15, "Aarti time", ADHYASHAKTI),
-            new Slot(20, 15, 22, 0, "News time", NEWS, GUJARATI_NEWS),
+            new Slot(20, 15, 22, 0, "News time", NEWS),
             new Slot(22, 0, 4, 30, "Late night", GUJARATI_FUN, GUJARATI_SONGS),
     };
 
@@ -154,6 +154,10 @@ final class Family {
         if (d == Calendar.SATURDAY || d == Calendar.SUNDAY) return true;
         String today = today();
         for (String h : HOLIDAYS) if (h.equals(today)) return true;
+        try {
+            Panchang.Day p = Panchang.today();
+            if (p.festival != null && p.festival.holiday) return true; // Diwali, New Year, Holi, Uttarayan...
+        } catch (RuntimeException ignored) { }
         return today.equals(c.getSharedPreferences("haven", Context.MODE_PRIVATE).getString("holidayDate", ""));
     }
 
@@ -171,6 +175,10 @@ final class Family {
 
     /** A greeting for the time of day, shown above the first row. */
     static String greeting() {
+        try {
+            Panchang.Day d = Panchang.today();
+            if (d.festival != null && !d.festival.greeting.isEmpty()) return d.festival.greeting;
+        } catch (RuntimeException ignored) { }
         int h = minuteOfDay() / 60;
         if (h >= 4 && h < 12) return "Good morning";
         if (h >= 12 && h < 17) return "Good afternoon";
@@ -240,7 +248,16 @@ final class Family {
         return now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
     }
 
-    /** The part of the day it is now ("Evening aarti"). */
+    /** What the first row's heading says after the greeting: the festival, or the part of the day. */
+    static String headline() {
+        try {
+            Panchang.Day d = Panchang.today();
+            if (d.festival != null) return d.festival.name;
+        } catch (RuntimeException ignored) { }
+        return slotName();
+    }
+
+    /** The part of the day it is now ("Aarti time"). */
     static String slotName() {
         int m = minuteOfDay();
         for (Slot s : DAY) if (s.has(m)) return s.name;

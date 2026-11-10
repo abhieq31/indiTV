@@ -106,6 +106,7 @@ public class HomeActivity extends Activity {
     private int screenH;
     private FrameLayout root, overlay;
     private View creditBox, clockBox;
+    private TextView tithiLine;
     private TextView creditTitle, creditLine, weather, appsTitle, overlayTitle, hint;
     private ScrollView scroller;
     private HorizontalScrollView dockScroll;
@@ -624,6 +625,10 @@ public class HomeActivity extends Activity {
         clock.addView(time, new LinearLayout.LayoutParams(-2, -2));
         clock.addView(date, new LinearLayout.LayoutParams(-2, -2));
         clock.addView(weather, new LinearLayout.LayoutParams(-2, -2));
+        // The day in the Gujarati calendar ("Kartak Sud Agiyaras"), soft gold; a festival in brighter gold.
+        tithiLine = Ui.text(this, "", 13, Ui.regular);
+        tithiLine.setTextColor(0xE6F4DDA8);
+        clock.addView(tithiLine, new LinearLayout.LayoutParams(-2, -2));
         LinearLayout credit = column();
         credit.setGravity(Gravity.END);
         creditTitle = Ui.text(this, "", 11, Ui.medium);
@@ -1056,9 +1061,10 @@ public class HomeActivity extends Activity {
         }
         String slot = Family.slotName();
         boolean simple = simpleNow();
-        String key = slot + "#" + entries.containsKey(Family.YOUTUBE) + "#" + simple + "#" + Family.greeting();
+        String key = slot + "#" + entries.size() + "#" + simple + "#" + Family.greeting() + "#" + Family.headline();
         if (key.equals(nowShown) && nowSec.row.getChildCount() > 0) return;
         boolean modeChanged = !nowShown.isEmpty() && !nowShown.contains("#" + simple + "#");
+        if (entries.isEmpty() && !nowShown.isEmpty()) modeChanged = false;
         nowShown = key;
         if (modeChanged) { // weekday <-> weekend / holiday: the other rows come and go too
             rebuild();
@@ -1070,18 +1076,33 @@ public class HomeActivity extends Activity {
         View f = getCurrentFocus();
         boolean hadFocus = f != null && f.getTag() instanceof String && ((String) f.getTag()).startsWith("now:");
         nowSec.row.removeAllViews();
-        if (nowSec.title != null) nowSec.title.setText(Family.greeting() + (slot.isEmpty() ? "" : "  ·  " + slot));
+        String head = Family.headline();
+        if (nowSec.title != null) nowSec.title.setText(Family.greeting() + (head.isEmpty() ? "" : "  ·  " + head));
+        showTithi();
         List<Family.Card> now = new ArrayList<>();
         List<Family.Card> cards = Family.cardsNow(now);
         // YouTube is what's on most of the time: it comes first, except at aarti and news time.
         boolean timed = false;
         for (Family.Card c : now) timed |= c == Family.ADHYASHAKTI || c == Family.NEWS;
-        Apps.Entry yt = entries.get(Family.YOUTUBE);
-        if (yt != null && !timed) nowSec.add(rowCell(yt, nowSec, "now:"));
+        // YouTube itself is first in Favourites, right below; this row is only real videos.
         for (Family.Card c : cards) nowSec.add(nowCell(c, now.contains(c), true));
-        if (yt != null && timed) nowSec.add(rowCell(yt, nowSec, "now:"));
         nowSec.box.setVisibility(View.VISIBLE);
         if (hadFocus || !userMoved) goHome();
+    }
+
+    /** Today's tithi under the date, and the festival's name if there is one. */
+    private void showTithi() {
+        if (tithiLine == null) return;
+        try {
+            Panchang.Day d = Panchang.today();
+            String text = d.label();
+            if (d.festival != null) text = d.festival.name + "  ·  " + text;
+            else if (d.special()) text = "✦ " + text; // Agiyaras, Punam, Amas
+            tithiLine.setText(text);
+            tithiLine.setTextColor(d.festival != null || d.special() ? 0xFFFFD58A : 0xE6F4DDA8);
+        } catch (RuntimeException e) {
+            tithiLine.setText("");
+        }
     }
 
     /** Weekends and holidays: the young ones' row (Attack on Titan, Shorts, Netflix, a family movie). */

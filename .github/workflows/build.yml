@@ -6,7 +6,7 @@ name: Build indiTV
 on:
   push:
     branches: [main]
-    paths: ["src/**", "res/**", "assets/**", "aidl/**", "AndroidManifest.xml", "build.sh", ".github/workflows/build.yml"]
+    paths: ["src/**", "test/**", "res/**", "assets/**", "aidl/**", "AndroidManifest.xml", "build.sh", ".github/workflows/build.yml"]
   workflow_dispatch:
 
 permissions:
@@ -22,6 +22,12 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+
+      - name: Check the Gujarati calendar
+        run: |
+          mkdir -p build/check
+          javac -d build/check src/tv/inditv/home/Panchang.java test/tv/inditv/home/PanchangCheck.java
+          java -cp build/check tv.inditv.home.PanchangCheck
 
       - name: Android SDK pieces
         run: |

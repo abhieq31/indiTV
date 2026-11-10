@@ -438,7 +438,7 @@ final class Slideshow {
             String[] names = c.getAssets().list("wallpapers");
             if (names != null) for (String n : names) {
                 if (!n.endsWith(".jpg") && !n.endsWith(".png") && !n.endsWith(".webp")) continue;
-                Item it = new Item("asset:wallpapers/" + n, titleOf(n), "", Wallpaper.IMAGE, AUTO);
+                Item it = new Item("asset:wallpapers/" + n, "", "", Wallpaper.IMAGE, AUTO); // no caption: a calm screen
                 (n.startsWith(p + "-") ? now : rest).add(it);
             }
         } catch (IOException ignored) { }

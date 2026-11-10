@@ -14,7 +14,6 @@ import android.graphics.Typeface;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -44,21 +43,55 @@ final class Darshan {
 
     static final String PREF_VERSES = "darshanVerses", PREF_SOUND = "darshanSound";
     private static final long SLIDE_MS = 42_000, FADE_MS = 4_500;
+    /** How long each letter of a shloka takes to be written, and how many letters the ink takes to settle. */
+    private static final long LETTER_MS = 110;
+    private static final float INK = 3f;
 
     final FrameLayout root;
     private final Context c;
     private final Scene scene;
     private final LinearLayout verseBox;
-    private final TextView verse, source, meaning, date, om;
+    private final TextView verse, meaning, date, tithi, festival, om;
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final Tanpura tanpura = new Tanpura();
     private final Random random = new Random();
+    private final int ink = 0xFFF4DDA8;
     private boolean running;
+    private int slides;
+    private String writing = "";
+    private int[] clusters = new int[0];
+    private long writeStart;
 
     private final Runnable dateTick = new Runnable() {
         @Override public void run() {
-            date.setText(todayDate());
+            showDay();
             ui.postDelayed(this, 60_000);
+        }
+    };
+
+    /** Writes the shloka a letter at a time, as if by hand, each letter's ink settling as it goes. */
+    private final Runnable pen = new Runnable() {
+        @Override public void run() {
+            float at = (android.os.SystemClock.uptimeMillis() - writeStart) / (float) LETTER_MS;
+            int n = clusters.length;
+            android.text.SpannableString sp = new android.text.SpannableString(writing);
+            int start = 0;
+            for (int i = 0; i < n; i++) {
+                int end = clusters[i];
+                float a = Math.max(0f, Math.min(1f, (at - i) / INK));
+                if (a < 1f) {
+                    int color = ((int) (255 * a) << 24) | (ink & 0xFFFFFF);
+                    sp.setSpan(new android.text.style.ForegroundColorSpan(color), start, end,
+                            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+                start = end;
+            }
+            verse.setText(sp);
+            if (at < n + INK) {
+                ui.postDelayed(this, 33);
+            } else {
+                meaning.animate().alpha(1f).setDuration(1_800).start();
+            }
         }
     };
 
@@ -73,66 +106,63 @@ final class Darshan {
         int side = Ui.dp(c, 64);
         Typeface serif = Typeface.create("serif", Typeface.NORMAL);
 
-        // The verse, lower left.
+        // The shloka, lower left: the verse, and its meaning in one quiet line.
         verseBox = new LinearLayout(c);
         verseBox.setOrientation(LinearLayout.VERTICAL);
-        source = Ui.text(c, "", 11, Ui.medium);
-        source.setLetterSpacing(0.22f);
-        source.setTextColor(0xB3E8C887);
-        source.setAllCaps(true);
         verse = Ui.text(c, "", 30, serif);
-        verse.setTextColor(0xFFF4DDA8);
-        verse.setLineSpacing(Ui.dp(c, 4), 1f);
-        verse.setShadowLayer(Ui.dp(c, 14), 0, 0, 0xCC000000);
-        View rule = new View(c);
-        rule.setBackgroundColor(0x80E8C887);
-        meaning = Ui.text(c, "", 15, Ui.light);
-        meaning.setTextColor(0xD9FFFFFF);
-        meaning.setMaxWidth(Ui.dp(c, 520));
+        verse.setTextColor(ink);
+        verse.setLineSpacing(Ui.dp(c, 6), 1f);
+        verse.setShadowLayer(Ui.dp(c, 16), 0, 0, 0xE6000000);
+        meaning = Ui.text(c, "", 14, Ui.light);
+        meaning.setTextColor(0xB3FFFFFF);
+        meaning.setMaxWidth(Ui.dp(c, 560));
         meaning.setShadowLayer(Ui.dp(c, 8), 0, 0, 0xCC000000);
-        verseBox.addView(source, new LinearLayout.LayoutParams(-2, -2));
-        LinearLayout.LayoutParams vlp = new LinearLayout.LayoutParams(-2, -2);
-        vlp.topMargin = Ui.dp(c, 8);
-        verseBox.addView(verse, vlp);
-        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(Ui.dp(c, 44), Ui.dp(c, 1));
-        rlp.topMargin = Ui.dp(c, 14);
-        rlp.bottomMargin = Ui.dp(c, 12);
-        verseBox.addView(rule, rlp);
-        verseBox.addView(meaning, new LinearLayout.LayoutParams(-2, -2));
-        verseBox.setAlpha(0f);
+        verseBox.addView(verse, new LinearLayout.LayoutParams(-2, -2));
+        LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(-2, -2);
+        mlp.topMargin = Ui.dp(c, 14);
+        verseBox.addView(meaning, mlp);
         FrameLayout.LayoutParams blp = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.START);
         blp.leftMargin = side;
-        blp.bottomMargin = Ui.dp(c, 52);
+        blp.bottomMargin = Ui.dp(c, 56);
         root.addView(verseBox, blp);
 
-        // Clock and Gujarati date, lower right.
+        // Clock, date and the day in the Gujarati calendar, lower right.
         LinearLayout clock = new LinearLayout(c);
         clock.setOrientation(LinearLayout.VERTICAL);
         clock.setGravity(Gravity.END);
         TextClock time = new TextClock(c);
         time.setFormat12Hour("h:mm");
         time.setFormat24Hour("HH:mm");
-        Ui.style(time, 52, Ui.light);
+        Ui.style(time, 46, Ui.light);
         time.setTextColor(0xF2FFFFFF);
         time.setIncludeFontPadding(false);
-        date = Ui.text(c, todayDate(), 15, Ui.regular);
-        date.setTextColor(0xCCF4DDA8);
+        date = Ui.text(c, "", 14, Ui.regular);
+        date.setTextColor(0xCCFFFFFF);
+        tithi = Ui.text(c, "", 14, Ui.regular);
+        tithi.setTextColor(0xD9F4DDA8);
+        festival = Ui.text(c, "", 16, Ui.medium);
+        festival.setTextColor(ink);
         clock.addView(time, new LinearLayout.LayoutParams(-2, -2));
         clock.addView(date, new LinearLayout.LayoutParams(-2, -2));
+        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(-2, -2);
+        tlp.topMargin = Ui.dp(c, 2);
+        clock.addView(tithi, tlp);
+        clock.addView(festival, new LinearLayout.LayoutParams(-2, -2));
         FrameLayout.LayoutParams clp = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.END);
         clp.rightMargin = side;
-        clp.bottomMargin = Ui.dp(c, 52);
+        clp.bottomMargin = Ui.dp(c, 56);
         root.addView(clock, clp);
 
         // A small Om that breathes, upper left.
-        om = Ui.text(c, "ॐ", 30, serif);
-        om.setTextColor(0xFFF4DDA8);
+        om = Ui.text(c, "ॐ", 28, serif);
+        om.setTextColor(ink);
         om.setShadowLayer(Ui.dp(c, 18), 0, 0, 0xFFE0A040);
-        om.setAlpha(0.35f);
+        om.setAlpha(0.3f);
         FrameLayout.LayoutParams olp = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.START);
         olp.leftMargin = side;
         olp.topMargin = Ui.dp(c, 40);
         root.addView(om, olp);
+        showDay();
     }
 
     void start() {
@@ -159,31 +189,61 @@ final class Darshan {
 
     private void breathe(boolean in) {
         if (!running) return;
-        om.animate().alpha(in ? 0.75f : 0.3f).setDuration(4_000)
+        om.animate().alpha(in ? 0.7f : 0.25f).setDuration(4_000)
                 .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
                 .withEndAction(() -> breathe(!in)).start();
     }
 
-    /** A new painting is fading in: change the verse with it, and nudge it a little (screen care). */
+    /** The date, today's tithi, and the festival if there is one; the sparks take the day's mood. */
+    private void showDay() {
+        date.setText(new java.text.SimpleDateFormat("EEEE, d MMMM", Locale.ENGLISH).format(new java.util.Date()));
+        try {
+            Panchang.Day d = Panchang.today();
+            tithi.setText(d.label() + " · VS " + d.samvat);
+            festival.setText(d.festival != null ? d.festival.name : "");
+            festival.setVisibility(d.festival != null ? View.VISIBLE : View.GONE);
+            scene.setMood(d.mood());
+        } catch (RuntimeException e) {
+            tithi.setVisibility(View.GONE);
+            festival.setVisibility(View.GONE);
+        }
+    }
+
+    /** A new painting is fading in: write its shloka (or, on a festival, every other time the day's own). */
     private void onSlide(String src) {
         boolean show = c.getSharedPreferences("haven", Context.MODE_PRIVATE).getBoolean(PREF_VERSES, true);
+        ui.removeCallbacks(pen);
+        slides++;
         verseBox.animate().cancel();
         verseBox.animate().alpha(0f).setDuration(1_200).withEndAction(() -> {
             if (!show) return;
             Mantras.Verse v = Mantras.forWallpaper(src);
-            verse.setText(v.text);
-            source.setText(v.source);
-            source.setVisibility(TextUtils.isEmpty(v.source) ? View.GONE : View.VISIBLE);
+            try {
+                Mantras.Verse f = Mantras.forDay(Panchang.today());
+                if (f != null && slides % 2 == 1) v = f;
+            } catch (RuntimeException ignored) { }
+            writing = v.text;
+            clusters = clusterEnds(v.text);
             meaning.setText(v.meaning);
+            meaning.setAlpha(0f);
+            verse.setText("");
             verseBox.setTranslationX(Ui.dp(c, random.nextInt(25)));
             verseBox.setTranslationY(-Ui.dp(c, random.nextInt(18)));
-            verseBox.animate().alpha(1f).setStartDelay(1_800).setDuration(2_600).start();
+            verseBox.setAlpha(1f);
+            writeStart = android.os.SystemClock.uptimeMillis() + 1_600; // once the painting has settled
+            ui.postDelayed(pen, 1_600);
         }).start();
     }
 
-    /** "Tuesday, 10 November" */
-    private static String todayDate() {
-        return new java.text.SimpleDateFormat("EEEE, d MMMM", Locale.ENGLISH).format(new java.util.Date());
+    /** Where each letter ends, keeping Devanagari conjuncts and matras whole (never half a letter). */
+    private static int[] clusterEnds(String s) {
+        android.icu.text.BreakIterator b = android.icu.text.BreakIterator.getCharacterInstance();
+        b.setText(s);
+        java.util.List<Integer> ends = new ArrayList<>();
+        for (int e = b.next(); e != android.icu.text.BreakIterator.DONE; e = b.next()) ends.add(e);
+        int[] out = new int[ends.size()];
+        for (int i = 0; i < out.length; i++) out[i] = ends.get(i);
+        return out;
     }
 
     // ------------------------------------------------------------------ the moving picture
@@ -216,6 +276,7 @@ final class Darshan {
 
         private static final class Spark {
             float x, y, vy, sway, phase, size, life, age;
+            int kind;
         }
 
         private final OnSlide listener;
@@ -227,6 +288,8 @@ final class Darshan {
         private final List<String> order = new ArrayList<>();
         private final List<Spark> sparks = new ArrayList<>();
         private Bitmap glow;
+        private Bitmap[] glows;
+        private Panchang.Mood mood;
         private Slide cur, next;
         private int at = -1;
         private long slideStart, lastFrame, fadeStart;
@@ -235,7 +298,8 @@ final class Darshan {
         Scene(Context c, OnSlide listener) {
             super(c);
             this.listener = listener;
-            glow = makeGlow(Ui.dp(c, 18));
+            glow = makeGlow(Ui.dp(c, 18), 0xFFFFF4D6, 0xCCFFC46B, 0x55FF9A2E);
+            glows = new Bitmap[]{glow};
         }
 
         void start() {
@@ -319,6 +383,7 @@ final class Darshan {
             bottom.setShader(new LinearGradient(0, h, 0, h * 0.55f, 0xB3000000, 0x00000000, Shader.TileMode.CLAMP));
             sparks.clear();
             int count = Math.max(24, w / Ui.dp(getContext(), 34));
+            if (mood == Panchang.Mood.DIYA) count = count * 3 / 2;
             for (int i = 0; i < count; i++) sparks.add(spawn(w, h, true));
         }
 
@@ -371,8 +436,32 @@ final class Darshan {
 
         // ------------------------------------------------------------ sparks
 
+        /**
+         * The day's sparks: diya gold most days; reds and oranges for Navratri, every colour for
+         * Holi, peacock blue among the gold for Krishna's days, moonlight for Shiva's, a bright
+         * sky for Uttarayan. Diwali and the New Year get more of them.
+         */
+        void setMood(Panchang.Mood m) {
+            if (m == mood) return;
+            mood = m;
+            int s = glow.getWidth();
+            switch (m) {
+                case GARBA: glows = new Bitmap[]{glow, makeGlow(s, 0xFFFFE0D0, 0xCCFF5A3C, 0x55D01E3A),
+                        makeGlow(s, 0xFFFFF0C8, 0xCCFF9F1A, 0x55E0561A)}; break;
+                case HOLI: glows = new Bitmap[]{makeGlow(s, 0xFFFFE6F2, 0xCCFF4FA3, 0x55E0287A),
+                        makeGlow(s, 0xFFE6FFF0, 0xCC3CE08A, 0x5520A060), makeGlow(s, 0xFFE6F0FF, 0xCC4F8CFF, 0x552850D0),
+                        makeGlow(s, 0xFFFFF6D6, 0xCCFFD23C, 0x55E0A010)}; break;
+                case KRISHNA: glows = new Bitmap[]{glow, glow, makeGlow(s, 0xFFE0F6FF, 0xCC2FB5C8, 0x55206E9A)}; break;
+                case SHIVA: glows = new Bitmap[]{makeGlow(s, 0xFFFFFFFF, 0xCCD6E4FF, 0x557C95D0), glow}; break;
+                case KITE: glows = new Bitmap[]{makeGlow(s, 0xFFFFFFFF, 0xCCBFE6FF, 0x5560A8E0), glow}; break;
+                default: glows = new Bitmap[]{glow}; break;
+            }
+            if (getWidth() > 0) onSizeChanged(getWidth(), getHeight(), 0, 0);
+        }
+
         private Spark spawn(int w, int h, boolean anywhere) {
             Spark p = new Spark();
+            p.kind = random.nextInt(glows.length);
             float d = getResources().getDisplayMetrics().density;
             p.x = random.nextFloat() * w;
             p.y = anywhere ? random.nextFloat() * h : h + random.nextFloat() * 40 * d;
@@ -409,19 +498,19 @@ final class Darshan {
                 canvas.save();
                 canvas.translate(x - size / 2f, p.y - size / 2f);
                 canvas.scale(p.size, p.size);
-                canvas.drawBitmap(glow, 0, 0, sparkPaint);
+                canvas.drawBitmap(glows[Math.min(p.kind, glows.length - 1)], 0, 0, sparkPaint);
                 canvas.restore();
             }
         }
 
         /** A soft golden point of light. */
-        private static Bitmap makeGlow(int size) {
+        private static Bitmap makeGlow(int size, int core, int mid, int edge) {
             Bitmap b = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
             Canvas cv = new Canvas(b);
             Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
             float r = size / 2f;
             p.setShader(new RadialGradient(r, r, r,
-                    new int[]{0xFFFFF4D6, 0xCCFFC46B, 0x55FF9A2E, 0x00FF8A1E}, new float[]{0f, 0.18f, 0.45f, 1f},
+                    new int[]{core, mid, edge, edge & 0x00FFFFFF}, new float[]{0f, 0.18f, 0.45f, 1f},
                     Shader.TileMode.CLAMP));
             cv.drawCircle(r, r, r, p);
             return b;
