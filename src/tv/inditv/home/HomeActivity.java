@@ -217,6 +217,7 @@ public class HomeActivity extends Activity {
             finish();
             return;
         }
+        installCrashGuard();
         HomeActivity older = live.get();
         if (older != null && older != this && !older.isFinishing()) older.finish();
         live = new java.lang.ref.WeakReference<>(this);
@@ -478,7 +479,7 @@ public class HomeActivity extends Activity {
         for (Section s : new Section[]{nowSec, weekendSec, upNextSec, recoSec, recentSec, dockSec, inputsSec}) {
             if (s.box.getVisibility() == View.VISIBLE && s.row.getChildCount() > 0) rows.add(s.row);
         }
-        for (int i = 0; i < grid.getChildCount(); i++) rows.add((LinearLayout) grid.getChildAt(i));
+        if (appsShown) for (int i = 0; i < grid.getChildCount(); i++) rows.add((LinearLayout) grid.getChildAt(i));
         return rows;
     }
 
@@ -523,14 +524,98 @@ public class HomeActivity extends Activity {
     }
 
     /** Back to the top of Home, focusing the first card of the topmost row that has any. */
+    private static boolean guarded;
+
+    /**
+     * No one may be around to fix the TV. If indiTV ever crashes three times within three
+     * minutes, it stops taking over the Home button for half an hour (see HomeKeyService), so the
+     * TV's own home screen works meanwhile and the family is never locked out.
+     */
+    private void installCrashGuard() {
+        if (guarded) return;
+        guarded = true;
+        final Thread.UncaughtExceptionHandler before = Thread.getDefaultUncaughtExceptionHandler();
+        final Context app = getApplicationContext();
+        Thread.setDefaultUncaughtExceptionHandler((thread, error) -> {
+            try {
+                android.content.SharedPreferences p = app.getSharedPreferences("guard", MODE_PRIVATE);
+                long now = System.currentTimeMillis();
+                StringBuilder keep = new StringBuilder();
+                int recent = 1;
+                for (String t : p.getString("crashes", "").split(",")) {
+                    if (t.isEmpty() || now - Long.parseLong(t) > 180_000) continue;
+                    keep.append(t).append(',');
+                    recent++;
+                }
+                android.content.SharedPreferences.Editor e = p.edit().putString("crashes", keep.toString() + now);
+                if (recent >= 3) e.putLong("pauseUntil", now + 30 * 60_000L);
+                e.commit();
+            } catch (Throwable ignored) { }
+            if (before != null) before.uncaughtException(thread, error);
+        });
+    }
+
+    private boolean appsShown;
+
+    /** Opens the full list of apps under Favourites; Home or Back puts it away again. */
+    private void showApps() {
+        appsShown = true;
+        appsTitle.setVisibility(View.VISIBLE);
+        grid.setVisibility(View.VISIBLE);
+        root.post(() -> {
+            View first = firstTile(grid);
+            if (first != null) first.requestFocus();
+        });
+    }
+
+    private void hideApps() {
+        if (!appsShown || editKey != null) return;
+        appsShown = false;
+        appsTitle.setVisibility(View.GONE);
+        grid.setVisibility(View.GONE);
+    }
+
+    /** The last tile of Favourites: everything else on the TV, one press away but not on show. */
+    private View moreCell() {
+        LinearLayout cell = column();
+        cell.setGravity(Gravity.CENTER_HORIZONTAL);
+        cell.setClipChildren(false);
+        FrameLayout tile = new FrameLayout(this);
+        float radius = dp(12);
+        tile.setOutlineProvider(Ui.rounded(radius));
+        tile.setClipToOutline(true);
+        tile.setCameraDistance(8000 * getResources().getDisplayMetrics().density);
+        tile.setBackground(new GlassDrawable(tile, radius, 0x40FFFFFF, 0.75f));
+        tile.setForeground(GlassDrawable.overlay(tile, radius, 0.75f));
+        TextView t = Ui.text(this, "All apps", 15, Ui.medium);
+        t.setGravity(Gravity.CENTER);
+        tile.addView(t, match());
+        tile.setFocusable(true);
+        tile.setClickable(true);
+        tile.setTag("more:apps");
+        Ui.addGloss(tile, TILE_W, TILE_H);
+        cell.addView(tile, new LinearLayout.LayoutParams(dp(TILE_W), dp(TILE_H)));
+        TextView label = cardLabel(" ");
+        cell.addView(label, labelParams());
+        tile.setOnFocusChangeListener((v, has) -> {
+            Ui.focus(tile, has, 1.09f);
+            if (!has) return;
+            tick();
+            dockSec.follow(cell);
+        });
+        tile.setOnClickListener(v -> showApps());
+        return cell;
+    }
+
     private void goHome() {
+        hideApps();
         scroller.smoothScrollTo(0, 0);
         View first = null;
         for (Section s : new Section[]{nowSec, weekendSec, upNextSec, recoSec, recentSec, dockSec, inputsSec}) {
             s.scroll.smoothScrollTo(0, 0);
             if (first == null && s.box.getVisibility() == View.VISIBLE) first = firstTile(s.row);
         }
-        if (first == null) first = firstTile(grid);
+        if (first == null && appsShown) first = firstTile(grid);
         if (first != null) first.requestFocus();
     }
 
@@ -605,6 +690,9 @@ public class HomeActivity extends Activity {
         grid = column();
         grid.setPadding(dp(SIDE), dp(10), dp(SIDE), dp(80));
         content.addView(grid);
+        // The full list of apps stays out of sight until "All apps" (last in Favourites) is chosen.
+        appsTitle.setVisibility(View.GONE);
+        grid.setVisibility(View.GONE);
 
         scroller.addView(content);
         scroller.setOnScrollChangeListener((v, x, y, ox, oy) -> {
@@ -898,6 +986,7 @@ public class HomeActivity extends Activity {
             lp.rightMargin = dp(GAP);
             dockRow.addView(makeCell(key, IN_DOCK), lp);
         }
+        dockRow.addView(moreCell(), new LinearLayout.LayoutParams(-2, -2));
         dockSec.box.setVisibility(dockRow.getChildCount() > 0 && rowOn(ROW_FAVOURITES) ? View.VISIBLE : View.GONE);
         fillRows(grid, gridKeys(), IN_GRID);
         inputsSec.row.removeAllViews();
@@ -1092,6 +1181,14 @@ public class HomeActivity extends Activity {
 
     /** Fills the Right now row for this part of the day; does nothing if that hasn't changed. */
     private void fillNow() {
+        try {
+            fillNowRow();
+        } catch (RuntimeException e) { // never let the family row take Home down with it
+            android.util.Log.w("indiTV", "Right now row", e);
+        }
+    }
+
+    private void fillNowRow() {
         if (nowSec == null) return;
         if (!rowOn(ROW_NOW)) {
             nowSec.row.removeAllViews();
@@ -1101,7 +1198,9 @@ public class HomeActivity extends Activity {
         }
         String slot = Family.slotName();
         boolean simple = simpleNow();
-        String key = slot + "#" + entries.size() + "#" + simple + "#" + Family.greeting() + "#" + Family.headline();
+        String cheer = Family.encouragement(this);
+        String key = slot + "#" + entries.size() + "#" + simple + "#" + Family.greeting() + "#" + Family.headline()
+                + "#" + Stats.version(this) + "#" + cheer;
         if (key.equals(nowShown) && nowSec.row.getChildCount() > 0) return;
         boolean modeChanged = !nowShown.isEmpty() && !nowShown.contains("#" + simple + "#");
         if (entries.isEmpty() && !nowShown.isEmpty()) modeChanged = false;
@@ -1117,10 +1216,22 @@ public class HomeActivity extends Activity {
         boolean hadFocus = f != null && f.getTag() instanceof String && ((String) f.getTag()).startsWith("now:");
         nowSec.row.removeAllViews();
         String head = Family.headline();
-        if (nowSec.title != null) nowSec.title.setText(Family.greeting() + (head.isEmpty() ? "" : "  ·  " + head));
+        if (nowSec.title != null) {
+            String top = Family.greeting() + (head.isEmpty() ? "" : "  ·  " + head);
+            if (cheer.isEmpty()) {
+                nowSec.title.setText(top);
+            } else { // a quiet second line: "Prayers on 5 of the last 7 days"
+                android.text.SpannableString sp = new android.text.SpannableString(top + "\n" + cheer);
+                int from = top.length() + 1;
+                sp.setSpan(new android.text.style.RelativeSizeSpan(0.62f), from, sp.length(), 0);
+                sp.setSpan(new android.text.style.ForegroundColorSpan(0xCCF4DDA8), from, sp.length(), 0);
+                nowSec.title.setText(sp);
+            }
+        }
         showTithi();
         // Only this part of the day's cards, each a real video (YouTube itself is in Favourites below).
-        for (Family.Card c : Family.cardsNow(this)) nowSec.add(nowCell(c, false, true));
+        List<Family.Card> picks = Family.cardsNow(this);
+        for (Family.Card c : picks) nowSec.add(nowCell(c, c == Family.discover, true));
         nowSec.box.setVisibility(View.VISIBLE);
         if (hadFocus || !userMoved) goHome();
     }
@@ -1165,7 +1276,7 @@ public class HomeActivity extends Activity {
         if (tithiLine == null) return;
         try {
             Panchang.Day d = Panchang.today();
-            String text = d.label();
+            String text = d.labelGu(); // કારતક સુદ એકમ
             if (d.special() && d.festival == null) text = "✦ " + text; // Agiyaras, Punam, Amas
             tithiLine.setText(text);
             tithiLine.setTextColor(d.festival != null || d.special() ? 0xFFFFD58A : 0xE6F4DDA8);
@@ -1246,7 +1357,7 @@ public class HomeActivity extends Activity {
         tile.setClickable(true);
         tile.setTag("now:" + card.id);
         if (isNow) {
-            TextView badge = Ui.text(this, "NOW", 10, Ui.semibold);
+            TextView badge = Ui.text(this, "NEW", 10, Ui.semibold); // the one they haven't tried yet
             badge.setShadowLayer(0, 0, 0, 0);
             badge.setLetterSpacing(0.08f);
             GradientDrawable bg = new GradientDrawable();

@@ -51,7 +51,8 @@ final class Darshan {
     private final Context c;
     private final Scene scene;
     private final LinearLayout verseBox;
-    private final TextView verse, meaning, greet, date, tithi, festival, om;
+    private final TextView verse, gu, meaning, greet, date, tithi, festival, om;
+    private final View rule;
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final Tanpura tanpura = new Tanpura();
     private final Random random = new Random();
@@ -90,7 +91,11 @@ final class Darshan {
             if (at < n + INK) {
                 ui.postDelayed(this, 33);
             } else {
-                meaning.animate().alpha(1f).setDuration(1_800).start();
+                // The verse is written: a fine gold line draws itself, then the meaning arrives,
+                // first in Gujarati, then in English.
+                rule.animate().scaleX(1f).alpha(1f).setDuration(1_400).start();
+                gu.animate().alpha(1f).setStartDelay(500).setDuration(1_800).start();
+                meaning.animate().alpha(1f).setStartDelay(1_500).setDuration(1_800).start();
             }
         }
     };
@@ -109,17 +114,33 @@ final class Darshan {
         // The shloka, lower left: the verse, and its meaning in one quiet line.
         verseBox = new LinearLayout(c);
         verseBox.setOrientation(LinearLayout.VERTICAL);
-        verse = Ui.text(c, "", 30, serif);
+        verse = Ui.text(c, "", 27, serif);
+        verse.setMaxWidth(Ui.dp(c, 640));
         verse.setTextColor(ink);
         verse.setLineSpacing(Ui.dp(c, 6), 1f);
         verse.setShadowLayer(Ui.dp(c, 16), 0, 0, 0xE6000000);
-        meaning = Ui.text(c, "", 14, Ui.light);
-        meaning.setTextColor(0xB3FFFFFF);
-        meaning.setMaxWidth(Ui.dp(c, 560));
+        rule = new View(c);
+        rule.setBackgroundColor(0x99E8C887);
+        rule.setPivotX(0f);
+        rule.setScaleX(0f);
+        gu = Ui.text(c, "", 15, Ui.regular);
+        gu.setTextColor(0xE6FFFFFF);
+        gu.setMaxWidth(Ui.dp(c, 640));
+        gu.setShadowLayer(Ui.dp(c, 8), 0, 0, 0xCC000000);
+        gu.setAlpha(0f);
+        meaning = Ui.text(c, "", 13, Ui.light);
+        meaning.setTextColor(0x99FFFFFF);
+        meaning.setMaxWidth(Ui.dp(c, 640));
         meaning.setShadowLayer(Ui.dp(c, 8), 0, 0, 0xCC000000);
+        meaning.setAlpha(0f);
         verseBox.addView(verse, new LinearLayout.LayoutParams(-2, -2));
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(Ui.dp(c, 56), Math.max(1, Ui.dp(c, 1)));
+        rlp.topMargin = Ui.dp(c, 12);
+        rlp.bottomMargin = Ui.dp(c, 10);
+        verseBox.addView(rule, rlp);
+        verseBox.addView(gu, new LinearLayout.LayoutParams(-2, -2));
         LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(-2, -2);
-        mlp.topMargin = Ui.dp(c, 14);
+        mlp.topMargin = Ui.dp(c, 3);
         verseBox.addView(meaning, mlp);
         FrameLayout.LayoutParams blp = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.START);
         blp.leftMargin = side;
@@ -202,14 +223,17 @@ final class Darshan {
 
     /** The date, today's tithi, and the festival if there is one; the sparks take the day's mood. */
     private void showDay() {
-        greet.setText(Family.greeting()); // "Good evening, Patel family"
+        greet.setVisibility(View.GONE); // no greeting here: Darshan stays quiet
         date.setText(new java.text.SimpleDateFormat("EEEE, d MMMM", Locale.ENGLISH).format(new java.util.Date()));
         try {
             Panchang.Day d = Panchang.today();
-            tithi.setText(d.label() + " · VS " + d.samvat);
-            festival.setText(d.festival != null ? d.festival.name : "");
-            festival.setVisibility(d.festival != null ? View.VISIBLE : View.GONE);
+            // The festival is named once, here, in a single quiet line with the tithi.
+            String fest = d.festivalGu();
+            tithi.setText((fest.isEmpty() ? "" : fest + "  ·  ") + d.labelGu() + "  ·  " + d.samvatGu());
+            festival.setVisibility(View.GONE);
             scene.setMood(d.mood());
+            int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+            scene.setNight(hour >= 22 || hour < 5);
         } catch (RuntimeException e) {
             tithi.setVisibility(View.GONE);
             festival.setVisibility(View.GONE);
@@ -227,12 +251,18 @@ final class Darshan {
             Mantras.Verse v = Mantras.forWallpaper(src);
             try {
                 Mantras.Verse f = Mantras.forDay(Panchang.today());
-                if (f != null && slides % 2 == 1) v = f;
+                if (f != null && slides == 1) v = f; // the festival's own verse once, not over and over
             } catch (RuntimeException ignored) { }
             writing = v.text;
             clusters = clusterEnds(v.text);
-            meaning.setText(v.meaning);
+            gu.animate().cancel();
+            meaning.animate().cancel();
+            rule.animate().cancel();
+            gu.setText(v.gu);
+            gu.setAlpha(0f);
+            meaning.setText(v.en);
             meaning.setAlpha(0f);
+            rule.setScaleX(0f);
             verse.setText("");
             verseBox.setTranslationX(Ui.dp(c, random.nextInt(25)));
             verseBox.setTranslationY(-Ui.dp(c, random.nextInt(18)));
@@ -297,6 +327,14 @@ final class Darshan {
         private Bitmap glow;
         private Bitmap[] glows;
         private Panchang.Mood mood;
+        private boolean night;
+        private final Paint nightShade = new Paint();
+
+        /** Late at night Darshan turns down: a dimmer picture and half the sparks. */
+        void setNight(boolean on) {
+            night = on;
+            nightShade.setColor(0x59000000);
+        }
         private Slide cur, next;
         private int at = -1;
         private long slideStart, lastFrame, fadeStart;
@@ -418,6 +456,7 @@ final class Darshan {
                     }
                 }
             }
+            if (night) canvas.drawRect(0, 0, w, h, nightShade);
             canvas.drawRect(0, 0, w, h, shade);
             canvas.drawRect(0, h * 0.55f, w, h, bottom);
             drawSparks(canvas, w, h, dt);
@@ -485,6 +524,7 @@ final class Darshan {
             float gw = glow.getWidth();
             for (int i = 0; i < sparks.size(); i++) {
                 Spark p = sparks.get(i);
+                if (night && (i & 1) == 1) continue;
                 p.age += dt;
                 p.y -= p.vy * dt;
                 p.phase += dt * 0.7f;

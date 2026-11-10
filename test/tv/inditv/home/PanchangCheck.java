@@ -20,6 +20,10 @@ public final class PanchangCheck {
         check(2026, 11, 8, "Aso Vad Chaudas", "Diwali");
         check(2026, 11, 10, "Kartak Sud Ekam", "Bestu Varas · New Year");
         check(2026, 5, 20, "Adhik Jeth Sud Choth", "");
+        Panchang.Day ny = Panchang.day(2026, 10, 10);
+        boolean gu = "કારતક સુદ એકમ".equals(ny.labelGu()) && "વિ.સં. ૨૦૮૩".equals(ny.samvatGu()) && "બેસતું વર્ષ".equals(ny.festivalGu());
+        System.out.println((gu ? "ok   " : "FAIL ") + ny.labelGu() + "  " + ny.samvatGu() + "  " + ny.festivalGu());
+        if (!gu) failed++;
         if (failed > 0) {
             System.out.println(failed + " calendar check(s) failed");
             System.exit(1);

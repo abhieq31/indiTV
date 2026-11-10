@@ -26,8 +26,8 @@ jobs:
       - name: Check the Gujarati calendar
         run: |
           mkdir -p build/check
-          javac -d build/check src/tv/inditv/home/Panchang.java test/tv/inditv/home/PanchangCheck.java
-          java -cp build/check tv.inditv.home.PanchangCheck
+          javac -encoding UTF-8 -d build/check src/tv/inditv/home/Panchang.java test/tv/inditv/home/PanchangCheck.java
+          java -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp build/check tv.inditv.home.PanchangCheck
 
       - name: Android SDK pieces
         run: |

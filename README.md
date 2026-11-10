@@ -26,21 +26,28 @@ The clock shows the time, the date and the day in the Gujarati calendar. The pai
 is kept softly out of focus and melts into a deep shade of its own colour, so the cards sit on
 calm ground.
 
-The row is chosen for what lifts the mind: prayer in the morning and evening, thoughtful
-Gujarati talks in the afternoon, and gentle entertainment at night. Every card is a real video
-with its own thumbnail; one press plays it.
+**The row learns.** Each part of the day has a pool of hand-picked videos: prayer in the
+morning and evening, thoughtful Gujarati talks and clean humour in the afternoon, gentle
+entertainment at night. Home shows five of them. The ones the family plays most at that time
+of day move to the front, and each day one they haven't tried yet is offered, marked **NEW**.
+What is watched stays on the TV (a few counts per video; see
+[Stats.java](src/tv/inditv/home/Stats.java)). When a habit forms, the heading says so quietly:
+"Prayers on 5 of the last 7 days".
 
-| Time | Videos |
+| Time | The pool |
 |---|---|
-| 4:30 AM – 11 AM | Hanuman Chalisa (Hariharan), Sampoorna Sundarkand (Ashwin Kumar Pathak), Aashapura Maa Aarti (Hemant Chauhan), Bhagavad Gita in Gujarati, Ram Katha (Morari Bapu) |
-| 11 AM – 5:30 PM | Nivrutti Pachhini Niraant (Jay Vasavada, for senior citizens), Bhagavad Gita, Ram Katha, Art and the Mind (Jay Vasavada), Rang Chhe Rajja (Siddharth Randeria) |
-| 5:30 PM – 8:15 PM | **Jay Adhyashakti Aarti** (Kinjal Dave), Aashapura Maa Aarti, Hanuman Chalisa, Sundarkand, Om Jai Jagdish Hare |
-| 8:15 PM – 4:30 AM | **News on Tata Play**, Rang Chhe Rajja, Jay Vasavada, Killol garba (Kinjal Dave) |
+| 4:30 AM – 11 AM | Hanuman Chalisa, Gayatri Mantra, Sundarkand, Aashapura Maa Aarti, Vaishnav Jan To, Bhagavad Gita in Gujarati, Ram Katha (Morari Bapu), Om Jai Jagdish Hare, Shrinathji dhun, Krishna bhajans |
+| 11 AM – 5:30 PM | Jay Vasavada (for senior citizens; on art), Bhagavad Gita, Ram Katha, Shahbuddin Rathod, Mayabhai Ahir, Rang Chhe Rajja, Vaishnav Jan To |
+| 5:30 PM – 8:15 PM | **Jay Adhyashakti Aarti** (first from 6:30), Aashapura Maa Aarti, Hanuman Chalisa, Om Jai Jagdish Hare, Shrinathji dhun, Sundarkand, Gayatri Mantra |
+| 8:15 PM – 4:30 AM | **News on Tata Play** (first until 9:30), Shahbuddin Rathod, Rang Chhe Rajja, Mayabhai Ahir, Jay Vasavada, Killol garba, Ram Katha; Naval's *How to Get Rich* on weekend nights |
 
 The row ends with **Darshan**, which starts the screensaver. **Favourites**: YouTube,
-JioHotstar, SonyLIV, Apple TV, Netflix. To show Up next, Top picks and Recent too, turn off
-**indiTV Settings > Home screen > Simple home**. The family name and every video are in
-[Family.java](src/tv/inditv/home/Family.java).
+JioHotstar, SonyLIV, Apple TV, Netflix, then **All apps**, which opens the full list (and
+indiTV Settings, its last tile); Home or Back puts the list away again. The family name and
+every video are in [Family.java](src/tv/inditv/home/Family.java).
+
+If indiTV ever crashes three times within three minutes, it stops taking over the Home button
+for half an hour, so the TV's own home screen works and nobody is locked out.
 
 indiTV only changes the home screen. The TV's own settings stay as they are: on Android TV it
 doesn't filter the remote's keys (holding Volume repeats as usual), and it leaves the TV's
@@ -51,8 +58,8 @@ animation speed alone.
 ## The Gujarati calendar
 
 indiTV keeps the Gujarati calendar itself, worked out from the Sun and the Moon, so it never
-needs updating. Under the date it shows the day: **Kartak Sud Ekam**, **Aso Vad Baras**, and so
-on, marked ✦ on Agiyaras, Punam and Amas. Adhik maas and the Vikram Samvat year are included.
+needs updating. Under the date it shows the day in Gujarati: **કારતક સુદ એકમ**, **આસો વદ બારસ**,
+and so on, marked ✦ on Agiyaras, Punam and Amas. Adhik maas and the Vikram Samvat year are included.
 
 On festivals the whole TV changes with the day: the greeting (Saal Mubarak, Jai Ambe Maa, Happy
 Uttarayan, Har Har Mahadev…), the heading, Darshan's shloka and the colour of its sparks.
@@ -75,14 +82,17 @@ When nothing is playing, the TV shows **Darshan**. It is kept quiet on purpose:
 - the paintings drift slowly and dissolve into one another, about every 40 seconds;
 - golden sparks rise like the glow of a diya (in the day's colours on festivals: red and orange
   for Navratri, every colour for Holi, more of them for Diwali);
-- with each painting, a shloka sung in Gujarati homes is **written out letter by letter**, then
-  one short line of its meaning appears: Vakratunda Mahakaya, Karagre Vasate Lakshmi, Manojavam,
-  Krishnam Vande Jagadgurum, Karmanye Vadhikaraste, Yada Yada Hi Dharmasya, Karpura Gauram,
-  Shri Krishna Sharanam Mama, Tvameva Mata, Om Tryambakam, Krishnaya Vasudevaya and
-  Shantakaram. On festivals, every other painting has the day's own: Sarva Mangala Mangalye for
-  Navratri, Shubham Karoti for Diwali and the New Year, the Surya shloka for Uttarayan;
-- a small ॐ breathes in the corner; the greeting ("Good evening, Patel family"), the clock,
-  the date and the day in the Gujarati calendar sit at the lower right;
+- with each painting, the shloka that belongs to it is **written out letter by letter**; a fine
+  gold line draws itself, then its meaning appears in Gujarati and in English. Only verses
+  chanted everywhere, else the Gita: Hanuman Chalisa with Hanuman, the Gayatri Mantra with the
+  figure rising into the sun, *paritranaya sadhunam* (4.8) with Krishna on the battlefield,
+  *karmanye vadhikaraste* (2.47) with the raised wheel, *yada yada hi dharmasya* (4.7) with the
+  chariot, Karpura Gauram and Om Tryambakam with Shiva and Parvati, Shri Krishna Sharanam Mama
+  with the swing, the Hare Krishna maha mantra with Radha's eyes, Tvameva Mata with the sleeping
+  children, Shantakaram with Vishnu. On a festival its own verse comes once, at the start;
+- a small ॐ breathes in the corner; the clock, the date and one line in Gujarati (the festival,
+  the tithi and the year) sit at the lower right. No greetings;
+- after 10 PM it turns down: a dimmer picture and half the sparks;
 - optionally, a soft **tanpura** drone (Pa Sa Sa Sa, tuned to C#), made on the TV itself.
 
 indiTV makes Darshan the TV's screensaver by itself once Set up is done. For guests, open it any

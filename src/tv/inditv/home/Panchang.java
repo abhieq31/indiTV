@@ -19,6 +19,32 @@ final class Panchang {
             "Kartak", "Magshar", "Posh", "Maha", "Fagan"};
     private static final String[] TITHIS = {"Ekam", "Bij", "Trij", "Choth", "Pancham", "Chhath", "Satam", "Atham",
             "Nom", "Dasham", "Agiyaras", "Baras", "Teras", "Chaudas"};
+    // The same in Gujarati, as the family reads it on a wall calendar.
+    private static final String[] MONTHS_GU = {"ચૈત્ર", "વૈશાખ", "જેઠ", "અષાઢ", "શ્રાવણ", "ભાદરવો", "આસો",
+            "કારતક", "માગશર", "પોષ", "મહા", "ફાગણ"};
+    private static final String[] TITHIS_GU = {"એકમ", "બીજ", "ત્રીજ", "ચોથ", "પાંચમ", "છઠ", "સાતમ", "આઠમ",
+            "નોમ", "દશમ", "અગિયારસ", "બારસ", "તેરસ", "ચૌદસ"};
+    private static final String[][] FESTIVALS_GU = {
+            {"Uttarayan", "ઉત્તરાયણ"}, {"Vasi Uttarayan", "વાસી ઉત્તરાયણ"}, {"Diwali", "દિવાળી"},
+            {"Maha Shivratri", "મહાશિવરાત્રી"}, {"Bestu Varas · New Year", "બેસતું વર્ષ"}, {"Bhai Bij", "ભાઈબીજ"},
+            {"Dev Uthi Agiyaras", "દેવઊઠી અગિયારસ"}, {"Dev Diwali", "દેવ દિવાળી"}, {"Gita Jayanti", "ગીતા જયંતી"},
+            {"Vasant Panchami", "વસંત પંચમી"}, {"Holi", "હોળી"}, {"Dhuleti", "ધુળેટી"},
+            {"Chaitra Navratri", "ચૈત્રી નવરાત્રી"}, {"Ram Navami", "રામનવમી"}, {"Hanuman Jayanti", "હનુમાન જયંતી"},
+            {"Akshaya Tritiya", "અખાત્રીજ"}, {"Nirjala Agiyaras", "નિર્જળા અગિયારસ"}, {"Rath Yatra", "રથયાત્રા"},
+            {"Devshayani Agiyaras", "દેવશયની અગિયારસ"}, {"Guru Purnima", "ગુરુપૂર્ણિમા"},
+            {"Raksha Bandhan", "રક્ષાબંધન"}, {"Randhan Chhath", "રાંધણ છઠ"}, {"Shitala Satam", "શીતળા સાતમ"},
+            {"Janmashtami", "જન્માષ્ટમી"}, {"Ganesh Chaturthi", "ગણેશ ચતુર્થી"}, {"Sarvapitri Amas", "સર્વપિતૃ અમાસ"},
+            {"Dussehra", "દશેરા"}, {"Sharad Punam", "શરદ પૂનમ"}, {"Vagh Baras", "વાઘ બારસ"},
+            {"Dhanteras", "ધનતેરસ"}, {"Kali Chaudas", "કાળી ચૌદસ"},
+    };
+
+    /** 2083 to ૨૦૮૩. */
+    static String digitsGu(int n) {
+        StringBuilder b = new StringBuilder();
+        for (char ch : String.valueOf(n).toCharArray()) b.append(ch >= '0' && ch <= '9' ? (char) ('૦' + (ch - '0')) : ch);
+        return b.toString();
+    }
+
     private static final int CHAITRA = 0, VAISHAKH = 1, JETH = 2, ASHADH = 3, SHRAVAN = 4, BHADARVO = 5, ASO = 6,
             KARTAK = 7, MAGSHAR = 8, MAHA = 10, FAGAN = 11;
     private static final int SUNRISE = 0, EVENING = 1, MIDNIGHT = 2;
@@ -76,6 +102,28 @@ final class Panchang {
         String label() {
             String p = tithi == 14 || tithi == 29 ? "" : (sud() ? " Sud" : " Vad");
             return (adhik ? "Adhik " : "") + MONTHS[month] + p + " " + tithiName();
+        }
+
+        /** "કારતક સુદ અગિયારસ" (or "અધિક જેઠ વદ બીજ"). */
+        String labelGu() {
+            String name = tithi == 14 ? "પૂનમ" : tithi == 29 ? "અમાસ" : TITHIS_GU[tithi % 15];
+            String p = tithi == 14 || tithi == 29 ? "" : (sud() ? " સુદ" : " વદ");
+            return (adhik ? "અધિક " : "") + MONTHS_GU[month] + p + " " + name;
+        }
+
+        /** "વિ.સં. ૨૦૮૩" */
+        String samvatGu() {
+            return "વિ.સં. " + digitsGu(samvat);
+        }
+
+        /** The festival's name in Gujarati ("બેસતું વર્ષ"), or "" on an ordinary day. */
+        String festivalGu() {
+            if (festival == null) return "";
+            if (festival.name.startsWith("Navratri · Day ")) {
+                return "નવરાત્રી · નોરતું " + digitsGu(Integer.parseInt(festival.name.substring(15)));
+            }
+            for (String[] f : FESTIVALS_GU) if (f[0].equals(festival.name)) return f[1];
+            return festival.name;
         }
 
         /** Agiyaras, Punam and Amas are kept with a fast or a visit to the mandir. */

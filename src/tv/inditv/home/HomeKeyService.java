@@ -59,6 +59,8 @@ public class HomeKeyService extends AccessibilityService {
     @Override public void onInterrupt() { }
 
     private void openHaven() {
+        // After repeated crashes indiTV steps aside for a while, so the TV's own home screen works.
+        if (System.currentTimeMillis() < getSharedPreferences("guard", MODE_PRIVATE).getLong("pauseUntil", 0)) return;
         startActivity(new Intent(Intent.ACTION_MAIN)
                 .addCategory(Intent.CATEGORY_HOME)
                 .setClass(this, HomeActivity.class)
