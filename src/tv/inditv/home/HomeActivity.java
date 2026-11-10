@@ -112,7 +112,7 @@ public class HomeActivity extends Activity {
     private void tintRowShade(int photo) {
         int deep = Ui.shade(photo, 0.16f) & 0xFFFFFF;
         GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{
-                0x00000000 | deep, 0x00000000 | deep, 0x8C000000 | deep, 0xE0000000 | deep, 0xF2000000 | deep});
+                0x00000000 | deep, 0x4D000000 | deep, 0xA6000000 | deep, 0xE0000000 | deep, 0xF2000000 | deep});
         rowShade.setBackground(g);
     }
     private TextView creditTitle, creditLine, weather, appsTitle, overlayTitle, hint;
@@ -1110,19 +1110,25 @@ public class HomeActivity extends Activity {
             h.setReadTimeout(15_000);
             h.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 9) AppleWebKit/537.36 Chrome/120 Safari/537.36");
             h.setRequestProperty("Accept-Language", "en");
-            StringBuilder sb = new StringBuilder();
+            // The link sits deep in a large page (about 850 KB in): scan it in pieces, keeping
+            // only a small window in memory, and stop as soon as it is found.
+            java.util.regex.Pattern canon = java.util.regex.Pattern
+                    .compile("rel=\"canonical\" href=\"https://www\\.youtube\\.com/watch\\?v=([A-Za-z0-9_-]{11})");
+            String tail = "";
             try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(h.getInputStream(), "UTF-8"))) {
-                char[] buf = new char[16 * 1024];
-                for (int n; (n = r.read(buf)) > 0 && sb.length() < 600_000; ) {
-                    sb.append(buf, 0, n);
-                    if (sb.indexOf("rel=\"canonical\"") >= 0 && sb.indexOf("</head>") >= 0) break;
+                char[] buf = new char[32 * 1024];
+                long read = 0;
+                for (int n; (n = r.read(buf)) > 0 && read < 4_000_000; read += n) {
+                    String window = tail + new String(buf, 0, n);
+                    java.util.regex.Matcher m = canon.matcher(window);
+                    if (m.find()) return m.group(1);
+                    if (window.contains("</head>")) return null;
+                    tail = window.substring(Math.max(0, window.length() - 200));
                 }
             } finally {
                 h.disconnect();
             }
-            java.util.regex.Matcher m = java.util.regex.Pattern
-                    .compile("rel=\"canonical\" href=\"https://www\\.youtube\\.com/watch\\?v=([A-Za-z0-9_-]{11})").matcher(sb);
-            return m.find() ? m.group(1) : null;
+            return null;
         } catch (Exception e) {
             return null;
         }
