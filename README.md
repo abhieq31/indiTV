@@ -22,15 +22,15 @@ wallpapers) and [Glass TV](https://github.com/aqmangge/glass-tv-home) (a home fo
 Most days the TV is for **Papa, Mummy, Dada and Ba**, so on weekdays indiTV shows a
 **simple home** with only three things on it:
 
-1. **Right now**, with large cards that read from across the room, in Gujarati first and English
-   underneath. Above it is a greeting for the time of day (સુપ્રભાત, જય શ્રી કૃષ્ણ, શુભ સંધ્યા,
-   શુભ રાત્રિ). The cards marked **NOW** come first:
+1. **Right now**, with large cards that read from across the room. Each card shows the original
+   artwork: the video's own YouTube thumbnail (one press plays that exact video), or the app's
+   own banner. The name is always written underneath. The cards marked **NOW** come first:
 
    | Time | Cards |
    |---|---|
-   | 4:30 AM – 11 AM | Hanuman Chalisa, Morning Aarti, Bhajan & Satsang |
-   | 11 AM – 6:45 PM | YouTube, Bhajan & Satsang, Gujarati Songs |
-   | 6:45 PM – 8:15 PM | **Jay Adhyashakti Aarti** (first card, so Home then OK plays it) |
+   | 4:30 AM – 11 AM | Shree Hanuman Chalisa (Hariharan), Om Jai Jagdish Hare (Anuradha Paudwal), Krishna Bhajans |
+   | 11 AM – 6:45 PM | YouTube, Krishna Bhajans, Gujarati Songs |
+   | 6:45 PM – 8:15 PM | **Jay Adhyashakti Aarti** (Kinjal Dave; first card, so Home then OK plays it) |
    | 8:15 PM – 10 PM | **News on Tata Play** (HDMI 1), Gujarati News Live |
    | 10 PM – 4:30 AM | Gujarati Comedy & Natak, Gujarati Songs |
 
@@ -65,9 +65,9 @@ When nothing is playing, the TV shows **Darshan**:
 - each painting's verse appears beneath it in its own script, with its meaning in English:
   the Hanuman Chalisa with Hanuman, *karmanye vadhikaraste* with the Wheel of Dharma,
   *yada yada hi dharmasya* with the chariot, *shantakaram bhujagashayanam* with Vishnu,
-  *Om Namah Shivaya* with Shiva and Parvati, *શ્રી કૃષ્ણઃ શરણં મમ* with Radha-Krishna on the swing,
+  *Om Namah Shivaya* with Shiva and Parvati, *श्री कृष्णः शरणं मम* with Radha-Krishna on the swing,
   and more;
-- a small ॐ breathes in the corner, and the clock and the date in Gujarati sit at the lower right;
+- a small ॐ breathes in the corner, and the clock and the date sit at the lower right;
 - optionally, a soft **tanpura** drone (Pa Sa Sa Sa, tuned to C#), made on the TV itself.
 
 indiTV makes Darshan the TV's screensaver by itself once Set up is done. For guests, open it any
@@ -98,8 +98,8 @@ the YouTube searches, the cards and the app order there.
 
 1. Open the file on github.com in your phone's browser and tap the pencil (Edit).
 2. Change what you want, for example `19, 0` to `19, 15` to move the aarti to 7:15.
-   To play one exact video instead of a search, paste its link (YouTube app > Share > Copy link)
-   into the card's `video` field, the empty `""` after the search words.
+   To change which video a card plays, paste a new link (YouTube app > Share > Copy link)
+   into the card's `video` field. Its thumbnail changes with it.
 3. Tap **Commit changes**. GitHub builds a new version in about 2 minutes
    (the **Actions** tab shows it).
 4. The TV offers the update within 12 hours, or straight away from

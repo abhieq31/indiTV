@@ -34,7 +34,7 @@ import java.util.concurrent.ExecutorService;
  * Darshan: indiTV's screensaver. The devotional paintings drift slowly (a Ken Burns move) and
  * dissolve into one another, golden sparks rise like the glow of a diya, and each painting's
  * verse appears beneath it in its own script, with its meaning. A small Om breathes in the
- * corner; the clock and the date in Gujarati sit quietly at the right. Optionally a soft
+ * corner; the clock and the date sit quietly at the right. Optionally a soft
  * tanpura plays (see {@link Tanpura}).
  *
  * Used by the screensaver ({@link DarshanDream}) and by the Darshan card on Home
@@ -57,7 +57,7 @@ final class Darshan {
 
     private final Runnable dateTick = new Runnable() {
         @Override public void run() {
-            date.setText(gujaratiDate());
+            date.setText(todayDate());
             ui.postDelayed(this, 60_000);
         }
     };
@@ -115,7 +115,7 @@ final class Darshan {
         Ui.style(time, 52, Ui.light);
         time.setTextColor(0xF2FFFFFF);
         time.setIncludeFontPadding(false);
-        date = Ui.text(c, gujaratiDate(), 15, Ui.regular);
+        date = Ui.text(c, todayDate(), 15, Ui.regular);
         date.setTextColor(0xCCF4DDA8);
         clock.addView(time, new LinearLayout.LayoutParams(-2, -2));
         clock.addView(date, new LinearLayout.LayoutParams(-2, -2));
@@ -181,9 +181,9 @@ final class Darshan {
         }).start();
     }
 
-    /** "મંગળવાર, 10 નવેમ્બર" */
-    private static String gujaratiDate() {
-        return new java.text.SimpleDateFormat("EEEE, d MMMM", new Locale("gu", "IN")).format(new java.util.Date());
+    /** "Tuesday, 10 November" */
+    private static String todayDate() {
+        return new java.text.SimpleDateFormat("EEEE, d MMMM", Locale.ENGLISH).format(new java.util.Date());
     }
 
     // ------------------------------------------------------------------ the moving picture

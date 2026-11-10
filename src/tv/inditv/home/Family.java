@@ -59,33 +59,49 @@ final class Family {
     /** For {@code apps}: open Google TV's search for the card's words (it lists every app that has them). */
     private static final String[] GOOGLE_SEARCH = {"google-search"};
 
-    static final Card HANUMAN_CHALISA = new Card("chalisa", "Hanuman Chalisa", "હનુમાન ચાલીસા", "Mummy",
-            "hanuman chalisa", "", 0, NONE, "morning-hanuman-in-meditation", 0xFFB5651D);
-    static final Card MORNING_AARTI = new Card("morning", "Morning Aarti", "સવારની આરતી", "Mummy",
-            "morning aarti bhajan", "", 0, NONE, "morning-into-the-light", 0xFFC98A2B);
-    static final Card BHAJAN = new Card("bhajan", "Bhajan & Satsang", "ભજન · સત્સંગ", "Mummy",
-            "gujarati bhajan satsang", "", 0, NONE, "morning-krishnas-gaze", 0xFF7A4E9C);
-    static final Card ADHYASHAKTI = new Card("aarti", "Jay Adhyashakti Aarti", "જય આદ્યાશક્તિ આરતી", "Everyone · 7 PM",
-            "jay adhyashakti aarti", "", 0, NONE, "day-chariot-of-fire", 0xFFD9822B);
-    static final Card NEWS = new Card("news", "News on Tata Play", "સમાચાર · HDMI 1", "Papa & Dada · 8:30 PM",
+    // Cards with a video play that exact video with one press and show its own YouTube thumbnail.
+    // Cards with a search open YouTube's results and show the app's own banner.
+    static final Card HANUMAN_CHALISA = new Card("chalisa", "Shree Hanuman Chalisa", "Hariharan · T-Series Bhakti Sagar", "Mummy",
+            "hanuman chalisa", "https://www.youtube.com/watch?v=LUx8wlA_dk8", 0, NONE, null, 0xFFB5651D);
+    static final Card MORNING_AARTI = new Card("morning", "Om Jai Jagdish Hare", "Anuradha Paudwal · Morning aarti", "Mummy",
+            "om jai jagdish hare aarti", "https://www.youtube.com/watch?v=3ucCEjXS9n8", 0, NONE, null, 0xFFC98A2B);
+    static final Card BHAJAN = new Card("bhajan", "Krishna Bhajans", "Hun To Vari Re Girdharlal · Non-stop", "Mummy",
+            "gujarati krishna bhajan", "https://www.youtube.com/watch?v=YuvUv8KDYGA", 0, NONE, null, 0xFF7A4E9C);
+    static final Card ADHYASHAKTI = new Card("aarti", "Jay Adhyashakti Aarti", "Kinjal Dave · Ambe Maa aarti", "Everyone · 7 PM",
+            "jay adhyashakti aarti", "https://www.youtube.com/watch?v=SU8aghkgeCQ", 0, NONE, null, 0xFFD9822B);
+    static final Card NEWS = new Card("news", "News on Tata Play", "HDMI 1", "Papa & Dada · 8:30 PM",
             "", "", 1, NONE, null, 0xFF1F5FA8);
-    static final Card GUJARATI_NEWS = new Card("gjnews", "Gujarati News Live", "ગુજરાતી સમાચાર", "Papa & Dada",
+    static final Card GUJARATI_NEWS = new Card("gjnews", "Gujarati News Live", "YouTube", "Papa & Dada",
             "gujarati news live", "", 0, NONE, null, 0xFF2D6E8E);
-    static final Card GUJARATI_FUN = new Card("gujarati", "Gujarati Comedy & Natak", "ગુજરાતી મનોરંજન", "Papa & Dada",
-            "gujarati comedy natak", "", 0, NONE, "night-moonlit-lotus-lake", 0xFF3C7A55);
-    static final Card GUJARATI_SONGS = new Card("songs", "Gujarati Songs", "ગુજરાતી ગીતો", "Everyone",
-            "gujarati songs", "", 0, NONE, "day-sunset-together", 0xFF9C4A6B);
-    static final Card AOT = new Card("aot", "Attack on Titan", "એનિમે · Anime", "Little brother",
+    static final Card GUJARATI_FUN = new Card("gujarati", "Gujarati Comedy", "YouTube", "Papa & Dada",
+            "gujarati comedy natak", "", 0, NONE, null, 0xFF3C7A55);
+    static final Card GUJARATI_SONGS = new Card("songs", "Gujarati Songs", "YouTube", "Everyone",
+            "gujarati songs", "", 0, NONE, null, 0xFF9C4A6B);
+    static final Card AOT = new Card("aot", "Attack on Titan", "Anime", "Little brother",
             "attack on titan", "", 0, new String[]{"com.crunchyroll.crunchyroid", "com.netflix.ninja"}, null, 0xFF5A3A2E);
-    static final Card SHORTS = new Card("shorts", "YouTube Shorts", "શોર્ટ્સ · Shorts", "Little brother",
+    static final Card SHORTS = new Card("shorts", "YouTube Shorts", "YouTube", "Little brother",
             "", "https://www.youtube.com/shorts", 0, NONE, null, 0xFFCC2B2B);
-    static final Card NETFLIX = new Card("netflix", "Netflix", "ફિલ્મો · Movies & series", "Everyone",
+    static final Card NETFLIX = new Card("netflix", "Netflix", "Movies & series", "Everyone",
             "", "", 0, new String[]{"com.netflix.ninja"}, null, 0xFF8E1B1F);
-    static final Card FAMILY_MOVIE = new Card("movie", "Gujarati Movie Night", "ગુજરાતી ફિલ્મ", "Everyone",
-            "gujarati movies", "", 0, GOOGLE_SEARCH, "day-sunset-together", 0xFF6E3B8C);
+    static final Card FAMILY_MOVIE = new Card("movie", "Gujarati Movie Night", "Search every app", "Everyone",
+            "gujarati movies", "", 0, GOOGLE_SEARCH, null, 0xFF6E3B8C);
     /** Opens the Darshan screensaver straight away, for when guests are in the room. */
-    static final Card DARSHAN = new Card("darshan", "Darshan", "દર્શન · screensaver", "For guests",
+    static final Card DARSHAN = new Card("darshan", "Darshan", "Devotional screensaver", "For guests",
             "", "", 0, NONE, "night-vishnu-among-the-stars", 0xFF2A2350);
+
+    /** The YouTube video id in a card's link ("LUx8wlA_dk8"), or null. */
+    static String videoId(Card card) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("[?&]v=([A-Za-z0-9_-]{11})").matcher(card.video);
+        return m.find() ? m.group(1) : null;
+    }
+
+    /** The app whose own banner stands for a card that has no video thumbnail, or null. */
+    static String appFor(Context c, Card card) {
+        PackageManager pm = c.getPackageManager();
+        for (String pkg : card.apps) if (installed(pm, pkg)) return pkg;
+        if (card.apps.length == 0 && (!card.query.isEmpty() || !card.video.isEmpty())) return YOUTUBE;
+        return null;
+    }
 
     /** A part of the day and the cards that come first in it. Times are 24-hour, start inclusive. */
     private static final class Slot {
@@ -107,8 +123,8 @@ final class Family {
 
     private static final Slot[] DAY = {
             new Slot(4, 30, 11, 0, "Morning prayers", HANUMAN_CHALISA, MORNING_AARTI, BHAJAN),
-            new Slot(11, 0, 18, 45, "Daytime", BHAJAN, GUJARATI_SONGS),
-            new Slot(18, 45, 20, 15, "Evening aarti", ADHYASHAKTI),
+            new Slot(11, 0, 18, 45, "Bhajans", BHAJAN, GUJARATI_SONGS),
+            new Slot(18, 45, 20, 15, "Aarti time", ADHYASHAKTI),
             new Slot(20, 15, 22, 0, "News time", NEWS, GUJARATI_NEWS),
             new Slot(22, 0, 4, 30, "Late night", GUJARATI_FUN, GUJARATI_SONGS),
     };
@@ -153,13 +169,13 @@ final class Family {
         return new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ROOT).format(new java.util.Date());
     }
 
-    /** A Gujarati greeting for the time of day, shown above the first row. */
+    /** A greeting for the time of day, shown above the first row. */
     static String greeting() {
         int h = minuteOfDay() / 60;
-        if (h >= 4 && h < 11) return "સુપ્રભાત";       // Good morning
-        if (h >= 11 && h < 17) return "જય શ્રી કૃષ્ણ";  // Jai Shri Krishna
-        if (h >= 17 && h < 21) return "શુભ સંધ્યા";     // Good evening
-        return "શુભ રાત્રિ";                             // Good night
+        if (h >= 4 && h < 12) return "Good morning";
+        if (h >= 12 && h < 17) return "Good afternoon";
+        if (h >= 17 && h < 22) return "Good evening";
+        return "Good night";
     }
 
     /** Favourites on first start: whichever are installed, in this order. */

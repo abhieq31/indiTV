@@ -31,7 +31,7 @@ final class Mantras {
                     "Whenever dharma declines, O Bharata, I come forth."},
             {"day-sunset-together", "ॐ उमामहेश्वराभ्यां नमः", "Shiva and Parvati",
                     "Salutations to Uma and Maheshvara, together as one."},
-            {"day-swing-in-the-shadows", "શ્રી કૃષ્ણઃ શરણં મમ", "Ashtakshar mantra",
+            {"day-swing-in-the-shadows", "श्री कृष्णः शरणं मम", "Ashtakshar mantra",
                     "Shri Krishna is my refuge."},
             {"day-lost-in-her-eyes", "हरे कृष्ण हरे कृष्ण कृष्ण कृष्ण हरे हरे।\nहरे राम हरे राम राम राम हरे हरे॥", "Maha mantra",
                     "The great chant of the names of Krishna and Rama."},
@@ -43,7 +43,7 @@ final class Mantras {
                     "Serene in form, resting on the cosmic serpent, the lotus-naveled lord of the gods."},
     };
 
-    private static final Verse DEFAULT = new Verse("જય શ્રી કૃષ્ણ", "", "Jai Shri Krishna.");
+    private static final Verse DEFAULT = new Verse("जय श्री कृष्ण", "", "Jai Shri Krishna.");
 
     private Mantras() { }
 

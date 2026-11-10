@@ -560,7 +560,7 @@ public class HomeActivity extends Activity {
         // Home rows, top to bottom: Up next, Top picks, Recent, Favourites (dock), Inputs, Apps.
         // Up next: one glass card for what you were watching (in place of a Continue watching row).
         nowSec = new Section("Right now");
-        nowSec.title.setTextSize(20); // the elders' row: larger
+        nowSec.title.setTextSize(20); // the elders' row: a little larger
         weekendSec = new Section("Weekend · everyone's home");
         upNextSec = new Section(null);
         recentSec = new Section("Recent");
@@ -1096,46 +1096,53 @@ public class HomeActivity extends Activity {
     }
 
     /**
-     * A family card: a picture (or colour), its name in Gujarati and English, and who it's for.
-     * {@code big}: the elders' row, with larger cards and type that reads from across the room.
+     * A family card with its original artwork: the video's own YouTube thumbnail, or the app's or
+     * input's own banner, with its name underneath. {@code big}: the elders' row, larger.
      */
     private View nowCell(Family.Card card, boolean isNow, boolean big) {
         final int w = big ? 240 : 192, h = big ? 135 : 108;
         final Section sec = big ? nowSec : weekendSec;
         LinearLayout cell = column();
-        cell.setGravity(Gravity.CENTER_HORIZONTAL);
+        cell.setGravity(Gravity.START);
         cell.setClipChildren(false);
-        FrameLayout tile = new FrameLayout(this);
-        tile.setOutlineProvider(Ui.rounded(dp(10)));
-        tile.setClipToOutline(true);
-        tile.setCameraDistance(8000 * getResources().getDisplayMetrics().density);
-        tile.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{card.color, Ui.shade(card.color, 0.45f)}));
-        tile.setForeground(GlassDrawable.overlay(tile, dp(10), 0.7f));
+
+        String vid = Family.videoId(card);
+        Apps.Entry app = null;
+        if (vid == null && card.art == null) {
+            if (card.hdmi > 0) {
+                String port = Family.hdmiPort(this, card.hdmi);
+                if (port != null) app = entries.get("input:" + port);
+            } else {
+                String pkg = Family.appFor(this, card);
+                if (pkg != null) app = entries.get(pkg);
+            }
+        }
+        FrameLayout tile;
+        android.widget.ImageView art = null;
+        if (app != null) {
+            tile = Ui.tile(this, app, w, h, false); // the app's own banner, as in Favourites
+        } else {
+            tile = new FrameLayout(this);
+            tile.setOutlineProvider(Ui.rounded(dp(12)));
+            tile.setClipToOutline(true);
+            tile.setCameraDistance(8000 * getResources().getDisplayMetrics().density);
+            tile.setBackgroundColor(0xFF1B1E24);
+            tile.setForeground(GlassDrawable.overlay(tile, dp(12), 0.7f));
+            art = new android.widget.ImageView(this);
+            art.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
+            tile.addView(art, match());
+            if (vid == null && card.art == null) { // nothing to show: the name on a calm colour
+                tile.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                        new int[]{card.color, Ui.shade(card.color, 0.45f)}));
+                TextView t = Ui.text(this, card.title, big ? 18 : 15, Ui.semibold);
+                t.setGravity(Gravity.CENTER);
+                t.setPadding(dp(12), 0, dp(12), 0);
+                tile.addView(t, match());
+            }
+        }
         tile.setFocusable(true);
         tile.setClickable(true);
         tile.setTag("now:" + card.id);
-        android.widget.ImageView art = new android.widget.ImageView(this);
-        art.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
-        tile.addView(art, match());
-        View scrim = new View(this);
-        scrim.setBackground(new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
-                new int[]{0xCC000000, 0x55000000, 0x00000000}));
-        tile.addView(scrim, new FrameLayout.LayoutParams(-1, dp(72), Gravity.BOTTOM));
-        LinearLayout words = column();
-        // Gujarati first and larger for the elders; English underneath.
-        TextView gu = Ui.text(this, card.subtitle, big ? 19 : 15, Ui.semibold);
-        gu.setSingleLine(true);
-        gu.setEllipsize(TextUtils.TruncateAt.END);
-        TextView name = Ui.text(this, card.title, big ? 13 : 12, Ui.regular);
-        name.setTextColor(0xE6FFFFFF);
-        name.setSingleLine(true);
-        name.setEllipsize(TextUtils.TruncateAt.END);
-        words.addView(gu, new LinearLayout.LayoutParams(-2, -2));
-        words.addView(name, new LinearLayout.LayoutParams(-2, -2));
-        FrameLayout.LayoutParams wlp = new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM | Gravity.START);
-        wlp.setMargins(dp(10), 0, dp(10), dp(8));
-        tile.addView(words, wlp);
         if (isNow) {
             TextView badge = Ui.text(this, "NOW", 10, Ui.semibold);
             badge.setShadowLayer(0, 0, 0, 0);
@@ -1151,13 +1158,26 @@ public class HomeActivity extends Activity {
         }
         Ui.addGloss(tile, w, h);
         cell.addView(tile, new LinearLayout.LayoutParams(dp(w), dp(h)));
-        TextView label = cardLabel(card.who);
-        label.setMaxWidth(dp(w));
-        label.setGravity(Gravity.CENTER);
-        cell.addView(label, new LinearLayout.LayoutParams(dp(w), -2) {{ topMargin = dp(9); }});
+        // Always-visible name and source, so everyone can read what each card is.
+        TextView name = Ui.text(this, card.title, big ? 15 : 13, Ui.semibold);
+        name.setSingleLine(true);
+        name.setEllipsize(TextUtils.TruncateAt.END);
+        name.setMaxWidth(dp(w));
+        TextView from = Ui.text(this, card.subtitle, big ? 12 : 11, Ui.regular);
+        from.setTextColor(0xB3FFFFFF);
+        from.setSingleLine(true);
+        from.setEllipsize(TextUtils.TruncateAt.END);
+        from.setMaxWidth(dp(w));
+        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(-2, -2);
+        nlp.topMargin = dp(10);
+        nlp.leftMargin = dp(2);
+        cell.addView(name, nlp);
+        LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(-2, -2);
+        flp.leftMargin = dp(2);
+        cell.addView(from, flp);
+        final FrameLayout t0 = tile;
         tile.setOnFocusChangeListener((v, has) -> {
-            Ui.focus(tile, has, 1.08f);
-            label.animate().alpha(has ? 1f : 0f).translationY(has ? dp(4) : 0).setDuration(180).start();
+            Ui.focus(t0, has, 1.08f);
             if (!has) return;
             tick();
             sec.follow(cell);
@@ -1176,16 +1196,24 @@ public class HomeActivity extends Activity {
                 Toast.makeText(this, "Couldn't open " + card.title, Toast.LENGTH_SHORT).show();
             }
         });
-        if (card.art != null) img.execute(() -> {
+        final android.widget.ImageView into = art;
+        if (into != null && vid != null) img.execute(() -> {
+            // The video's own thumbnail from YouTube (kept on the TV after the first time).
+            Bitmap b = Media.poster(this, "https://i.ytimg.com/vi/" + vid + "/maxresdefault.jpg");
+            if (b == null) b = Media.poster(this, "https://i.ytimg.com/vi/" + vid + "/hqdefault.jpg");
+            Bitmap got = b;
+            if (got != null) ui.post(() -> into.setImageBitmap(got));
+        });
+        if (into != null && card.art != null) img.execute(() -> {
             Bitmap b = null;
             try (java.io.InputStream in = getAssets().open("wallpapers/" + card.art + ".jpg")) {
                 BitmapFactory.Options o = new BitmapFactory.Options();
-                o.inSampleSize = 4; // 1672 px wide to about 420: plenty for a card
+                o.inSampleSize = 4;
                 o.inPreferredConfig = Bitmap.Config.RGB_565;
                 b = BitmapFactory.decodeStream(in, null, o);
             } catch (Exception | OutOfMemoryError ignored) { }
             Bitmap got = b;
-            if (got != null) ui.post(() -> art.setImageBitmap(got));
+            if (got != null) ui.post(() -> into.setImageBitmap(got));
         });
         return cell;
     }
