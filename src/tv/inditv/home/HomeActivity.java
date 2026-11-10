@@ -1166,7 +1166,7 @@ public class HomeActivity extends Activity {
 
         String vid = !card.channel.isEmpty() ? liveIds.get(card.channel) : Family.videoId(card);
         Apps.Entry app = null;
-        if (vid == null && card.art == null) {
+        if (vid == null && card.art == null && card.channel.isEmpty()) {
             if (card.hdmi > 0) {
                 app = null; // drawn below as a set-top box card
             } else {
@@ -1189,7 +1189,8 @@ public class HomeActivity extends Activity {
             art.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
             tile.addView(art, match());
             if (vid == null && card.art == null) {
-                // A set-top box (or anything without artwork): a calm colour, an icon and one word.
+                // A set-top box, or a news channel while its live picture loads: a calm colour,
+                // an icon and one word.
                 tile.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
                         new int[]{card.color, Ui.shade(card.color, 0.4f)}));
                 LinearLayout mid = column();
@@ -1201,6 +1202,7 @@ public class HomeActivity extends Activity {
                     mid.addView(icon, new LinearLayout.LayoutParams(dp(big ? 40 : 32), dp(big ? 40 : 32)));
                 }
                 TextView t = Ui.text(this, card.hdmi > 0 ? "HDMI " + card.hdmi : card.title, big ? 17 : 14, Ui.medium);
+                if (!card.channel.isEmpty()) mid.setTag("placeholder");
                 t.setGravity(Gravity.CENTER);
                 LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(-2, -2);
                 tl.topMargin = dp(6);
@@ -1276,7 +1278,11 @@ public class HomeActivity extends Activity {
             Bitmap got = b;
             ui.post(() -> {
                 liveIds.put(card.channel, id);
-                if (got != null) into.setImageBitmap(got);
+                if (got != null) {
+                    into.setImageBitmap(got);
+                    View ph = ((ViewGroup) into.getParent()).findViewWithTag("placeholder");
+                    if (ph != null) ph.setVisibility(View.GONE);
+                }
             });
         });
         if (into != null && vid != null) img.execute(() -> {
