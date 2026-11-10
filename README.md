@@ -198,6 +198,11 @@ options:
 
 ---
 
+## Tested on
+
+TCL 55" Android TV 9 (BeyondTV2): home screen, Home button, Darshan screensaver. The code also
+handles Android 8 and Google TV on Android 10-14.
+
 ## Permissions
 
 indiTV asks for the same permissions as Haven: an accessibility service only for the Home button,

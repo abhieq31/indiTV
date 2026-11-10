@@ -58,7 +58,7 @@ case "$OLD" in null|"") NEW="$SVC" ;; *"$SVC"*) NEW="$OLD" ;; *) NEW="$OLD:$SVC"
 sh_tv settings put secure enabled_accessibility_services "$NEW"
 sh_tv settings put secure accessibility_enabled 1
 sleep 3
-if sh_tv dumpsys accessibility | grep -q "indiTV"; then
+if sh_tv dumpsys accessibility | grep -qi "inditv"; then
   echo "Done: the Home button now opens indiTV."
 else
   echo "indiTV is installed, but the Home-button service didn't start. Enable 'indiTV Home button'"
