@@ -45,7 +45,7 @@ final class Keeper {
         if (!canWrite(c)) { done.run(); return; }
         // Android 14 switches the service straight back off while this is denied; don't fight it.
         if (restricted(c)) { done.run(); return; }
-        if (p.getBoolean("fastAnim", true)) setAnimations(c, FAST);
+        if (p.getBoolean("fastAnim", false)) setAnimations(c, FAST);
         if (p.getBoolean("homeKey", true) && !serviceRunning(c)
                 && (now || SystemClock.elapsedRealtime() - lastRearm >= REARM_GAP_MS)) {
             lastRearm = SystemClock.elapsedRealtime();

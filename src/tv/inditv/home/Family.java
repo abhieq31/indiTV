@@ -113,6 +113,14 @@ final class Family {
     static final Card SANDESH = new Card("sandesh", "Sandesh News", "Live news", "Papa & Dada",
             "", "https://www.youtube.com/@SandeshNewsTV/live", 0, NONE, null, 0xFF2D6E8E).live("@SandeshNewsTV");
 
+    // Brain gym: thoughtful talks in Gujarati, from the speakers' own channels.
+    static final Card JV_SENIORS = new Card("jv-seniors", "Nivrutti Pachhini Niraant", "Jay Vasavada", "Papa, Mummy, Dada, Ba",
+            "jay vasavada", "https://www.youtube.com/watch?v=-6oESgxTIMQ", 0, NONE, null, 0xFF2D6E8E);
+    static final Card JV_ART = new Card("jv-art", "Art and the Mind", "Jay Vasavada", "Everyone",
+            "jay vasavada", "https://www.youtube.com/watch?v=dLiY1e07pk4", 0, NONE, null, 0xFF2D6E8E);
+    static final Card GITA = new Card("gita", "Bhagavad Gita in Gujarati", "Chapter 12 · Bhakti Yoga", "Everyone",
+            "bhagavad gita gujarati", "https://www.youtube.com/watch?v=8YIN_Pw3svY", 0, NONE, null, 0xFF7A4E9C);
+
     /** The YouTube video id in a card's link ("LUx8wlA_dk8"), or null. */
     static String videoId(Card card) {
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("[?&]v=([A-Za-z0-9_-]{11})").matcher(card.video);
@@ -150,10 +158,10 @@ final class Family {
      * entertainment. The row shows only the cards for this part of the day.
      */
     private static final Slot[] DAY = {
-            new Slot(4, 30, 11, 0, "Morning prayers", HANUMAN_CHALISA, SUNDARKAND, ASHAPURA, MORNING_AARTI, KATHA, BHAJAN),
-            new Slot(11, 0, 17, 30, "News and entertainment", TV9, SANDESH, GUJARATI_FUN, GUJARATI_SONGS),
-            new Slot(17, 30, 20, 15, "Evening aarti", ADHYASHAKTI, ASHAPURA, HANUMAN_CHALISA, SUNDARKAND, KATHA),
-            new Slot(20, 15, 4, 30, "News and entertainment", NEWS, TV9, SANDESH, GUJARATI_FUN, GUJARATI_SONGS),
+            new Slot(4, 30, 11, 0, "Morning prayers", HANUMAN_CHALISA, SUNDARKAND, ASHAPURA, GITA, KATHA),
+            new Slot(11, 0, 17, 30, "Think and learn", JV_SENIORS, GITA, KATHA, JV_ART, GUJARATI_FUN),
+            new Slot(17, 30, 20, 15, "Evening aarti", ADHYASHAKTI, ASHAPURA, HANUMAN_CHALISA, SUNDARKAND, MORNING_AARTI),
+            new Slot(20, 15, 4, 30, "Evening", NEWS, GUJARATI_FUN, JV_SENIORS, GUJARATI_SONGS),
     };
 
     /**
@@ -213,19 +221,16 @@ final class Family {
         return "Good night" + ", " + FAMILY_NAME + " family";
     }
 
-    /** Favourites on first start: whichever are installed, in this order. */
-    static final String[] DOCK = {
-            YOUTUBE,
-            "in.startv.hotstar", "in.startv.hotstar.dplus.tv", "com.jio.media.ondemand", // JioHotstar (TV and phone builds)
-            "com.amazon.amazonvideo.livingroom",                                          // Prime Video
-            "com.netflix.ninja",                                                          // Netflix
-            "com.apple.atve.androidtv.appletv",                                           // Apple TV
-            "com.sonyliv", "com.sonyliv.tv",                                              // SonyLIV
-            "com.crunchyroll.crunchyroid",                                                // Crunchyroll (anime)
-            "com.disney.disneyplus",                                                      // Disney (inside JioHotstar in India)
-            "com.graymatrix.did",                                                         // ZEE5
-            "com.jio.jioplay.tv",                                                         // JioTV
-    };
+    /** Favourites: whichever are installed, in this order. Raise DOCK_VERSION to apply a new list. */
+    static final int DOCK_VERSION = 2;
+    /** Each group is one tile: the first of its apps that's installed. */
+    static final String[][] DOCK = {
+            {YOUTUBE},
+            {"in.startv.hotstar", "in.startv.hotstar.dplus.tv", "com.jio.media.stb.ondemand", "com.jio.media.ondemand"}, // JioHotstar
+            {"com.sonyliv", "com.sonyliv.tv"},                                                // SonyLIV
+            {"com.apple.atve.androidtv.appletv"},                                             // Apple TV
+            {"com.netflix.ninja"},                                                            // Netflix
+    }
 
     // ------------------------------------------------------------------ automatic
 
@@ -281,7 +286,7 @@ final class Family {
             Panchang.Day d = Panchang.today();
             if (d.festival != null) return d.festival.name;
         } catch (RuntimeException ignored) { }
-        return slotName();
+        return ""; // a calm heading: just the greeting
     }
 
     /** The part of the day it is now ("Aarti time"). */
@@ -299,7 +304,6 @@ final class Family {
             if (!sl.has(m)) continue;
             for (Card k : sl.cards) if (!out.contains(k)) out.add(k);
         }
-        if (everyoneHome(c)) out.add(AOT); // the young ones are home
         out.add(DARSHAN);
         return out;
     }

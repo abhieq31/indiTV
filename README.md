@@ -19,31 +19,32 @@ wallpapers) and [Glass TV](https://github.com/aqmangge/glass-tv-home) (a home fo
 
 ## The home screen
 
-The top has only two buttons: **Home** and **Tata Play** (HDMI 1). indiTV Settings is the last
-tile in Apps. The heading greets the family by name, "Good evening, Patel family", or the
-festival's greeting on festival days. The painting stays clear at the top and melts into a deep
-shade of its own colour under the rows.
+Calm and simple, on purpose. The top has two buttons, **Home** and **Tata Play** (HDMI 1). Then
+one greeting ("Good evening, Patel family", or the festival's greeting), one row of videos for
+this part of the day, the five apps, and Apps further down (indiTV Settings is its last tile).
+The clock shows the time, the date and the day in the Gujarati calendar. The painting behind
+is kept softly out of focus and melts into a deep shade of its own colour, so the cards sit on
+calm ground.
 
-**Right now** changes with the time of day. Mornings and evenings are for prayer; afternoons and
-nights for local news and entertainment. Every card is a real video with its own thumbnail, and
-one press plays it:
+The row is chosen for what lifts the mind: prayer in the morning and evening, thoughtful
+Gujarati talks in the afternoon, and gentle entertainment at night. Every card is a real video
+with its own thumbnail; one press plays it.
 
-| Time | Cards |
+| Time | Videos |
 |---|---|
-| 4:30 AM – 11 AM | Hanuman Chalisa (Hariharan), Sampoorna Sundarkand (Ashwin Kumar Pathak), Aashapura Maa Aarti (Hemant Chauhan), Om Jai Jagdish Hare, Ram Katha by Morari Bapu, Krishna bhajans |
-| 11 AM – 5:30 PM | TV9 Gujarati and Sandesh News (today's live stream), Rang Chhe Rajja (Siddharth Randeria), Killol garba (Kinjal Dave) |
-| 5:30 PM – 8:15 PM | **Jay Adhyashakti Aarti** (Kinjal Dave), Aashapura Maa Aarti, Hanuman Chalisa, Sundarkand, Ram Katha |
-| 8:15 PM – 4:30 AM | **News on Tata Play**, TV9 Gujarati, Sandesh News, comedy natak, garba |
+| 4:30 AM – 11 AM | Hanuman Chalisa (Hariharan), Sampoorna Sundarkand (Ashwin Kumar Pathak), Aashapura Maa Aarti (Hemant Chauhan), Bhagavad Gita in Gujarati, Ram Katha (Morari Bapu) |
+| 11 AM – 5:30 PM | Nivrutti Pachhini Niraant (Jay Vasavada, for senior citizens), Bhagavad Gita, Ram Katha, Art and the Mind (Jay Vasavada), Rang Chhe Rajja (Siddharth Randeria) |
+| 5:30 PM – 8:15 PM | **Jay Adhyashakti Aarti** (Kinjal Dave), Aashapura Maa Aarti, Hanuman Chalisa, Sundarkand, Om Jai Jagdish Hare |
+| 8:15 PM – 4:30 AM | **News on Tata Play**, Rang Chhe Rajja, Jay Vasavada, Killol garba (Kinjal Dave) |
 
-The news cards look up each channel's live stream every time Home opens, so they always show
-today's picture. The row ends with **Darshan**, which starts the screensaver.
+The row ends with **Darshan**, which starts the screensaver. **Favourites**: YouTube,
+JioHotstar, SonyLIV, Apple TV, Netflix. To show Up next, Top picks and Recent too, turn off
+**indiTV Settings > Home screen > Simple home**. The family name and every video are in
+[Family.java](src/tv/inditv/home/Family.java).
 
-Below are **Favourites** (YouTube, JioHotstar, Prime Video, Netflix, Apple TV, SonyLIV) and
-**Apps**. On weekdays that's all. On Saturdays, Sundays and holidays, Attack on Titan joins
-Right now and **Up next**, **Top picks** and **Recent** appear. For a festival on a weekday,
-turn on **indiTV Settings > Home screen > Holiday today**, or add the date to `HOLIDAYS` in
-[Family.java](src/tv/inditv/home/Family.java). The family name is `FAMILY_NAME` in the same
-file.
+indiTV only changes the home screen. The TV's own settings stay as they are: on Android TV it
+doesn't filter the remote's keys (holding Volume repeats as usual), and it leaves the TV's
+animation speed alone.
 
 **Wallpapers:** 11 devotional paintings are built in, chosen by the time of day.
 

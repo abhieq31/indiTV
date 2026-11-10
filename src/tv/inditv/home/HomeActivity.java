@@ -86,7 +86,7 @@ public class HomeActivity extends Activity {
     /** Live TV app found on this TV ("" if none), set when the top bar is built. */
     private String liveTv = "";
     /** First-run Favourites: whichever of these are installed, in this order. */
-    private static final String[] DEFAULT_DOCK = Family.DOCK; // see Family.java
+    private static final String[][] DEFAULT_DOCK = Family.DOCK; // see Family.java
     // Open-Meteo needs no API key; only the TV's rounded coordinates are sent (see Place).
     private static final String WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
             + "?latitude=%s&longitude=%s&current=temperature_2m,weather_code&timezone=auto";
@@ -263,6 +263,13 @@ public class HomeActivity extends Activity {
         ui.postDelayed(upNextTurn, 5000);
         ui.removeCallbacks(nowTick);
         nowTick.run();
+        // Once: indiTV only changes the home screen, so the TV's own animation speed comes back.
+        if (!getSharedPreferences("haven", MODE_PRIVATE).getBoolean("animDefault", false) && Keeper.canWrite(this)) {
+            store.fastAnim = false;
+            store.save();
+            Keeper.setAnimations(this, "1");
+            getSharedPreferences("haven", MODE_PRIVATE).edit().putBoolean("animDefault", true).apply();
+        }
         // Once, as soon as Set up has given indiTV the permission: Darshan becomes the screensaver.
         android.content.SharedPreferences dp0 = getSharedPreferences("haven", MODE_PRIVATE);
         if (!dp0.getBoolean("darshanSet", false) && setDarshanScreensaver()) dp0.edit().putBoolean("darshanSet", true).apply();
@@ -283,7 +290,7 @@ public class HomeActivity extends Activity {
                 android.content.SharedPreferences prefs = getSharedPreferences("haven", MODE_PRIVATE);
                 if (!r.version.equals(prefs.getString("updateNoticed", ""))) {
                     prefs.edit().putString("updateNoticed", r.version).apply();
-                    Toast.makeText(this, "indiTV " + r.version + " is available. Install it from indiTV Settings.", Toast.LENGTH_LONG).show();
+                    // No pop-up for the family: updates wait quietly in indiTV Settings > About.
                 }
             });
         });
@@ -462,8 +469,7 @@ public class HomeActivity extends Activity {
 
     /** True on weekdays (not holidays) while Simple home on weekdays is on. */
     private boolean simpleNow() {
-        return getSharedPreferences("haven", MODE_PRIVATE).getBoolean("simpleWeekdays", true)
-                && !Family.everyoneHome(this);
+        return getSharedPreferences("haven", MODE_PRIVATE).getBoolean("simpleWeekdays", true);
     }
 
     /** Every row of Home, top to bottom: the visible sections, then each row of the app grid. */
@@ -637,6 +643,7 @@ public class HomeActivity extends Activity {
         weather.setTextColor(0xE6FFFFFF);
         clock.addView(time, new LinearLayout.LayoutParams(-2, -2));
         clock.addView(date, new LinearLayout.LayoutParams(-2, -2));
+        weather.setVisibility(View.GONE); // time, date and tithi only: less to read
         clock.addView(weather, new LinearLayout.LayoutParams(-2, -2));
         // The day in the Gujarati calendar ("Kartak Sud Agiyaras"), soft gold; a festival in brighter gold.
         tithiLine = Ui.text(this, "", 13, Ui.regular);
@@ -725,7 +732,9 @@ public class HomeActivity extends Activity {
     private float blurTarget() {
         if (overlayId != null) return 1f;
         float max = new float[]{0f, 0.5f, 0.75f, 1f}[Math.max(0, Math.min(3, store.blurLevel))];
-        return Math.max(scrollFraction(), navigating ? 1f : 0f) * max;
+        // Always softly out of focus on Home, so the painting is a glow behind the cards rather
+        // than a busy picture; fully soft while you move between rows.
+        return Math.max(0.6f, Math.max(scrollFraction(), navigating ? 1f : 0f) * max);
     }
 
     private void updateBlur(boolean animate) {
@@ -773,15 +782,32 @@ public class HomeActivity extends Activity {
         Timing.mark("apps loaded");
         entries.clear();
         entries.putAll(map);
-        if (!store.hasDock()) {
+        if (!getSharedPreferences("haven", MODE_PRIVATE).getBoolean("hidCrunchyroll", false)
+                && entries.containsKey("com.crunchyroll.crunchyroid")) {
+            store.hidden.add("com.crunchyroll.crunchyroid");
+            getSharedPreferences("haven", MODE_PRIVATE).edit().putBoolean("hidCrunchyroll", true).apply();
+        }
+        // The family's five apps, in their order (once; changes made later in Edit mode are kept).
+        int dockVersion = getSharedPreferences("haven", MODE_PRIVATE).getInt("dockVersion", 0);
+        if (store.hasDock() && dockVersion < Family.DOCK_VERSION) {
+            store.dock.clear();
+            getSharedPreferences("haven", MODE_PRIVATE).edit().putInt("dockVersion", Family.DOCK_VERSION).apply();
+        }
+        if (!store.hasDock() || store.dock.isEmpty()) {
+            getSharedPreferences("haven", MODE_PRIVATE).edit().putInt("dockVersion", Family.DOCK_VERSION).apply();
             String port = Inputs.liveTvPort(this), hdmi1 = port != null ? "input:" + port : null;
             if (hdmi1 == null || !entries.containsKey(hdmi1)) {
                 hdmi1 = null;
                 for (String k : entries.keySet()) if (k.startsWith("input:")) { hdmi1 = k; break; }
             }
-            for (String k : DEFAULT_DOCK) {
-                String key = HDMI1.equals(k) ? hdmi1 : k;
-                if (key != null && entries.containsKey(key)) store.dock.add(key);
+            for (String[] group : DEFAULT_DOCK) {
+                for (String k : group) {
+                    String key = HDMI1.equals(k) ? hdmi1 : k;
+                    if (key != null && entries.containsKey(key)) {
+                        store.dock.add(key);
+                        break;
+                    }
+                }
             }
             store.save();
         }
@@ -1250,7 +1276,7 @@ public class HomeActivity extends Activity {
         cell.addView(name, nlp);
         LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(-2, -2);
         flp.leftMargin = dp(2);
-        cell.addView(from, flp);
+        // One line per card: the name. (Who and where are in Family.java, not on the screen.)
         final FrameLayout t0 = tile;
         tile.setOnFocusChangeListener((v, has) -> {
             Ui.focus(t0, has, 1.08f);
@@ -2806,7 +2832,7 @@ public class HomeActivity extends Activity {
             }));
         }
         android.content.SharedPreferences fp = getSharedPreferences("haven", MODE_PRIVATE);
-        home.add(SettingsPanel.toggle("Simple home on weekdays", "Only Right now, Favourites and Apps; weekends and holidays show everything",
+        home.add(SettingsPanel.toggle("Simple home", "Only the day's videos, Favourites and Apps",
                 () -> fp.getBoolean("simpleWeekdays", true), () -> {
                     fp.edit().putBoolean("simpleWeekdays", !fp.getBoolean("simpleWeekdays", true)).apply();
                     rebuild();

@@ -85,7 +85,7 @@ final class Store {
                     .putString("folders", b.optString("folders", "{}"))
                     .putBoolean("sounds", b.optBoolean("sounds", true))
                     .putBoolean("homeKey", b.optBoolean("homeKey", true))
-                    .putBoolean("fastAnim", b.optBoolean("fastAnim", true))
+                    .putBoolean("fastAnim", b.optBoolean("fastAnim", false))
                     .putBoolean("dynColor", b.optBoolean("dynColor", true))
                     .putInt("brightness", b.optInt("brightness", 100))
                     .putInt("blurLevel", b.optInt("blurLevel", 2))
@@ -123,7 +123,7 @@ final class Store {
         hidden.addAll(h);
         sounds = p.getBoolean("sounds", true);
         homeKey = p.getBoolean("homeKey", true);
-        fastAnim = p.getBoolean("fastAnim", true);
+        fastAnim = p.getBoolean("fastAnim", false); // the TV's own speed unless asked
         dynColor = p.getBoolean("dynColor", true);
         brightness = p.getInt("brightness", 100);
         blurLevel = p.getInt("blurLevel", 2);

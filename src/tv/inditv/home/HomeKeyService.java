@@ -14,6 +14,30 @@ import android.view.accessibility.AccessibilityEvent;
 public class HomeKeyService extends AccessibilityService {
 
     private static final String GOOGLE_TV_HOME = "com.google.android.apps.tv.launcherx";
+    /** The Android TV launcher (Android 9 TVs such as TCL's): it's the Home app there. */
+    private static final String ANDROID_TV_HOME = "com.google.android.tvlauncher";
+
+    /**
+     * Filtering the remote's keys is only needed on Google TV, which grabs Home before any app.
+     * Everywhere else indiTV just watches for the stock home screen opening, and leaves every key
+     * to the TV, so holding Volume up or down keeps repeating as it should.
+     */
+    @Override protected void onServiceConnected() {
+        super.onServiceConnected();
+        boolean googleTv;
+        try {
+            getPackageManager().getPackageInfo(GOOGLE_TV_HOME, 0);
+            googleTv = true;
+        } catch (Exception e) {
+            googleTv = false;
+        }
+        if (googleTv) return;
+        android.accessibilityservice.AccessibilityServiceInfo info = getServiceInfo();
+        if (info == null) return;
+        info.flags &= ~android.accessibilityservice.AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
+        info.packageNames = new String[]{ANDROID_TV_HOME, GOOGLE_TV_HOME};
+        setServiceInfo(info);
+    }
 
     @Override public boolean onKeyEvent(KeyEvent e) {
         if (e.getKeyCode() != KeyEvent.KEYCODE_HOME) return false;
@@ -24,8 +48,10 @@ public class HomeKeyService extends AccessibilityService {
 
     @Override public void onAccessibilityEvent(AccessibilityEvent ev) {
         if (ev.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
-                && GOOGLE_TV_HOME.contentEquals(String.valueOf(ev.getPackageName()))
-                && String.valueOf(ev.getClassName()).endsWith(".HomeActivity")) {
+                && (GOOGLE_TV_HOME.contentEquals(String.valueOf(ev.getPackageName()))
+                        && String.valueOf(ev.getClassName()).endsWith(".HomeActivity")
+                    || ANDROID_TV_HOME.contentEquals(String.valueOf(ev.getPackageName()))
+                        && String.valueOf(ev.getClassName()).endsWith(".MainActivity"))) {
             openHaven();
         }
     }
