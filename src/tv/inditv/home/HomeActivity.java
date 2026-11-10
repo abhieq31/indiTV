@@ -1096,8 +1096,7 @@ public class HomeActivity extends Activity {
         try {
             Panchang.Day d = Panchang.today();
             String text = d.label();
-            if (d.festival != null) text = d.festival.name + "  ·  " + text;
-            else if (d.special()) text = "✦ " + text; // Agiyaras, Punam, Amas
+            if (d.special() && d.festival == null) text = "✦ " + text; // Agiyaras, Punam, Amas
             tithiLine.setText(text);
             tithiLine.setTextColor(d.festival != null || d.special() ? 0xFFFFD58A : 0xE6F4DDA8);
         } catch (RuntimeException e) {
@@ -1131,8 +1130,7 @@ public class HomeActivity extends Activity {
         Apps.Entry app = null;
         if (vid == null && card.art == null) {
             if (card.hdmi > 0) {
-                String port = Family.hdmiPort(this, card.hdmi);
-                if (port != null) app = entries.get("input:" + port);
+                app = null; // drawn below as a set-top box card
             } else {
                 String pkg = Family.appFor(this, card);
                 if (pkg != null) app = entries.get(pkg);
@@ -1152,13 +1150,24 @@ public class HomeActivity extends Activity {
             art = new android.widget.ImageView(this);
             art.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
             tile.addView(art, match());
-            if (vid == null && card.art == null) { // nothing to show: the name on a calm colour
+            if (vid == null && card.art == null) {
+                // A set-top box (or anything without artwork): a calm colour, an icon and one word.
                 tile.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                        new int[]{card.color, Ui.shade(card.color, 0.45f)}));
-                TextView t = Ui.text(this, card.title, big ? 18 : 15, Ui.semibold);
+                        new int[]{card.color, Ui.shade(card.color, 0.4f)}));
+                LinearLayout mid = column();
+                mid.setGravity(Gravity.CENTER);
+                if (card.hdmi > 0) {
+                    android.widget.ImageView icon = new android.widget.ImageView(this);
+                    icon.setImageResource(R.drawable.ic_tab_tv);
+                    icon.setColorFilter(0xF2FFFFFF);
+                    mid.addView(icon, new LinearLayout.LayoutParams(dp(big ? 40 : 32), dp(big ? 40 : 32)));
+                }
+                TextView t = Ui.text(this, card.hdmi > 0 ? "HDMI " + card.hdmi : card.title, big ? 17 : 14, Ui.medium);
                 t.setGravity(Gravity.CENTER);
-                t.setPadding(dp(12), 0, dp(12), 0);
-                tile.addView(t, match());
+                LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(-2, -2);
+                tl.topMargin = dp(6);
+                mid.addView(t, tl);
+                tile.addView(mid, new FrameLayout.LayoutParams(-1, -1));
             }
         }
         tile.setFocusable(true);

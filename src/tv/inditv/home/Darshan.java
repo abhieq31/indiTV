@@ -158,9 +158,10 @@ final class Darshan {
         om.setTextColor(ink);
         om.setShadowLayer(Ui.dp(c, 18), 0, 0, 0xFFE0A040);
         om.setAlpha(0.3f);
+        om.setPadding(Ui.dp(c, 24), Ui.dp(c, 24), Ui.dp(c, 24), Ui.dp(c, 24)); // room for its glow
         FrameLayout.LayoutParams olp = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.START);
-        olp.leftMargin = side;
-        olp.topMargin = Ui.dp(c, 40);
+        olp.leftMargin = side - Ui.dp(c, 24);
+        olp.topMargin = Ui.dp(c, 16);
         root.addView(om, olp);
         showDay();
     }

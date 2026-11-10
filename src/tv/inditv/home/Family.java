@@ -69,7 +69,7 @@ final class Family {
             "gujarati krishna bhajan", "https://www.youtube.com/watch?v=YuvUv8KDYGA", 0, NONE, null, 0xFF7A4E9C);
     static final Card ADHYASHAKTI = new Card("aarti", "Jay Adhyashakti Aarti", "Kinjal Dave · Ambe Maa aarti", "Everyone · 7 PM",
             "jay adhyashakti aarti", "https://www.youtube.com/watch?v=SU8aghkgeCQ", 0, NONE, null, 0xFFD9822B);
-    static final Card NEWS = new Card("news", "News on Tata Play", "HDMI 1", "Papa & Dada · 8:30 PM",
+    static final Card NEWS = new Card("news", "News on Tata Play", "Set-top box · HDMI 1", "Papa & Dada · 8:30 PM",
             "", "", 1, NONE, null, 0xFF1F5FA8);
     static final Card GUJARATI_NEWS = new Card("gjnews", "Gujarati News Live", "YouTube", "Papa & Dada",
             "gujarati news live", "", 0, NONE, null, 0xFF2D6E8E);
@@ -83,8 +83,8 @@ final class Family {
             "", "https://www.youtube.com/shorts", 0, NONE, null, 0xFFCC2B2B);
     static final Card NETFLIX = new Card("netflix", "Netflix", "Movies & series", "Everyone",
             "", "", 0, new String[]{"com.netflix.ninja"}, null, 0xFF8E1B1F);
-    static final Card FAMILY_MOVIE = new Card("movie", "Gujarati Movie Night", "Search every app", "Everyone",
-            "gujarati movies", "", 0, GOOGLE_SEARCH, null, 0xFF6E3B8C);
+    static final Card FAMILY_MOVIE = new Card("movie", "Movie Night", "JioHotstar", "Everyone",
+            "", "", 0, new String[]{"in.startv.hotstar", "in.startv.hotstar.dplus.tv", "com.jio.media.ondemand"}, null, 0xFF6E3B8C);
     /** Opens the Darshan screensaver straight away, for when guests are in the room. */
     static final Card DARSHAN = new Card("darshan", "Darshan", "Devotional screensaver", "For guests",
             "", "", 0, NONE, "night-vishnu-among-the-stars", 0xFF2A2350);

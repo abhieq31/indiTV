@@ -56,25 +56,46 @@ Hanuman, Krishna, the Wheel of Dharma and the dawn; daytime shows the Gita chari
 and Shiva-Parvati at sunset; nights show Vishnu among the stars, Shiva-Parvati on the moonlit
 lake, and little Krishna and Shiva asleep under the stars.
 
+## The Gujarati calendar
+
+indiTV keeps the Gujarati calendar itself, worked out from the Sun and the Moon, so it never
+needs updating. Under the date it shows the day: **Kartak Sud Ekam**, **Aso Vad Baras**, and so
+on, marked ✦ on Agiyaras, Punam and Amas. Adhik maas and the Vikram Samvat year are included.
+
+On festivals the whole TV changes with the day: the greeting (Saal Mubarak, Jai Ambe Maa, Happy
+Uttarayan, Har Har Mahadev…), the heading, Darshan's shloka and the colour of its sparks.
+Diwali, Bestu Varas, Bhai Bij, Dhanteras, Kali Chaudas, Holi, Dhuleti, Uttarayan, Raksha Bandhan,
+Janmashtami and Dussehra also count as everyone-home days. Also included: Navratri (each day),
+Sharad Punam, Vagh Baras, Dev Uthi Agiyaras, Dev Diwali, Gita Jayanti, Vasant Panchami, Maha
+Shivratri, Chaitra Navratri, Ram Navami, Hanuman Jayanti, Akha Trij, Nirjala Agiyaras, Rath
+Yatra, Devshayani Agiyaras, Guru Purnima, Randhan Chhath, Shitala Satam, Ganesh Chaturthi and
+Sarvapitri Amas.
+
+The tithi is the one at sunrise in Ahmedabad, as in a printed panchang; Diwali and Maha
+Shivratri go by the evening and midnight. Every build checks it against known dates
+([PanchangCheck](test/tv/inditv/home/PanchangCheck.java)). Rarely, when a tithi changes within
+minutes of sunrise, it can be a day off from a printed calendar.
+
 ## Darshan, the screensaver
 
-When nothing is playing, the TV shows **Darshan**:
+When nothing is playing, the TV shows **Darshan**. It is kept quiet on purpose:
 
 - the paintings drift slowly and dissolve into one another, about every 40 seconds;
-- golden sparks rise from the bottom of the screen, like the glow of a diya;
-- each painting's verse appears beneath it in its own script, with its meaning in English:
-  the Hanuman Chalisa with Hanuman, *karmanye vadhikaraste* with the Wheel of Dharma,
-  *yada yada hi dharmasya* with the chariot, *shantakaram bhujagashayanam* with Vishnu,
-  *Om Namah Shivaya* with Shiva and Parvati, *श्री कृष्णः शरणं मम* with Radha-Krishna on the swing,
-  and more;
-- a small ॐ breathes in the corner, and the clock and the date sit at the lower right;
+- golden sparks rise like the glow of a diya (in the day's colours on festivals: red and orange
+  for Navratri, every colour for Holi, more of them for Diwali);
+- with each painting, a shloka sung in Gujarati homes is **written out letter by letter**, then
+  one short line of its meaning appears: Vakratunda Mahakaya, Karagre Vasate Lakshmi, Manojavam,
+  Krishnam Vande Jagadgurum, Karmanye Vadhikaraste, Yada Yada Hi Dharmasya, Karpura Gauram,
+  Shri Krishna Sharanam Mama, Tvameva Mata, Om Tryambakam, Krishnaya Vasudevaya and
+  Shantakaram. On festivals, every other painting has the day's own: Sarva Mangala Mangalye for
+  Navratri, Shubham Karoti for Diwali and the New Year, the Surya shloka for Uttarayan;
+- a small ॐ breathes in the corner; the clock, the date and the day in the Gujarati calendar
+  sit at the lower right;
 - optionally, a soft **tanpura** drone (Pa Sa Sa Sa, tuned to C#), made on the TV itself.
 
 indiTV makes Darshan the TV's screensaver by itself once Set up is done. For guests, open it any
-time from the **Darshan** card on Home; any button on the remote closes it, and the volume
-buttons still work. Options are in **indiTV Settings > Wallpaper**: Show Darshan now, Use Darshan
-as the screensaver, Verses on Darshan, and Tanpura on Darshan (off by default).
-To change a verse or add one for a new painting, edit
+time from the **Darshan** card on Home; any button closes it, and the volume buttons still work.
+Options are in **indiTV Settings > Wallpaper**. To change a shloka, edit
 [Mantras.java](src/tv/inditv/home/Mantras.java).
 
 ## Automatic times
