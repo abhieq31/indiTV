@@ -28,8 +28,6 @@ final class Schedule {
     static void arm(Context c) {
         AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
         if (am == null) return;
-        String place = Place.known(c);
-        if (place != null) Family.usePlace(place); // sunset where the TV is
         for (int i = 0; i < Family.AUTO.length; i++) {
             Family.Auto a = Family.AUTO[i];
             PendingIntent pi = PendingIntent.getBroadcast(c, 4100 + i,

@@ -313,7 +313,12 @@ final class Family {
 
     static final int FIXED = 0, SUNSET = 1, SUNRISE = 2;
 
-    /** Where the sun is worked out: the TV's own place if indiTV knows it, else Ahmedabad. */
+    /**
+     * Where the family's sunset is worked out: Ahmedabad. (Not the TV's own guess of its place,
+     * which comes from the internet provider and can be a city away.) For another town, put its
+     * latitude and longitude here, e.g. Surat 21.17, 72.83; Rajkot 22.30, 70.80; Vadodara 22.31, 73.18.
+     */
+    static final String FAMILY_CITY = "Ahmedabad";
     static double lat = 23.03, lon = 72.58;
 
     static void usePlace(String latLon) {
