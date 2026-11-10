@@ -230,7 +230,7 @@ final class Family {
             {"com.sonyliv", "com.sonyliv.tv"},                                                // SonyLIV
             {"com.apple.atve.androidtv.appletv"},                                             // Apple TV
             {"com.netflix.ninja"},                                                            // Netflix
-    }
+    };
 
     // ------------------------------------------------------------------ automatic
 
