@@ -194,7 +194,12 @@ public class HomeActivity extends Activity {
         // Opened as an ordinary app (Google TV's app list, adb, after an update) Android starts a
         // second indiTV in its own task and keeps both, each with all its pictures. Open the one
         // Home instead and close this copy.
-        if (getIntent() == null || !getIntent().hasCategory(Intent.CATEGORY_HOME)) {
+        // Only when a Home copy is already running: on Android 9 (TCL) the Home intent comes back
+        // to this same, closing copy instead, and the app would just blink shut. With no other
+        // copy, this one simply becomes Home.
+        HomeActivity running = live.get();
+        boolean another = running != null && running != this && !running.isFinishing() && !running.isDestroyed();
+        if (another && (getIntent() == null || !getIntent().hasCategory(Intent.CATEGORY_HOME))) {
             handedOver = true;
             try {
                 startActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
@@ -330,6 +335,7 @@ public class HomeActivity extends Activity {
 
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        if (handedOver || settings == null) return; // this copy is closing; it never built its screen
         settings.close();
         if (editKey != null) exitEdit();
         if (overlayId != null) closeFolder();
