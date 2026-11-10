@@ -51,7 +51,7 @@ final class Darshan {
     private final Context c;
     private final Scene scene;
     private final LinearLayout verseBox;
-    private final TextView verse, meaning, date, tithi, festival, om;
+    private final TextView verse, meaning, greet, date, tithi, festival, om;
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final Tanpura tanpura = new Tanpura();
     private final Random random = new Random();
@@ -142,6 +142,11 @@ final class Darshan {
         tithi.setTextColor(0xD9F4DDA8);
         festival = Ui.text(c, "", 16, Ui.medium);
         festival.setTextColor(ink);
+        greet = Ui.text(c, "", 15, Ui.light);
+        greet.setTextColor(0xCCFFFFFF);
+        LinearLayout.LayoutParams glp = new LinearLayout.LayoutParams(-2, -2);
+        glp.bottomMargin = Ui.dp(c, 4);
+        clock.addView(greet, glp);
         clock.addView(time, new LinearLayout.LayoutParams(-2, -2));
         clock.addView(date, new LinearLayout.LayoutParams(-2, -2));
         LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(-2, -2);
@@ -197,6 +202,7 @@ final class Darshan {
 
     /** The date, today's tithi, and the festival if there is one; the sparks take the day's mood. */
     private void showDay() {
+        greet.setText(Family.greeting()); // "Good evening, Patel family"
         date.setText(new java.text.SimpleDateFormat("EEEE, d MMMM", Locale.ENGLISH).format(new java.util.Date()));
         try {
             Panchang.Day d = Panchang.today();

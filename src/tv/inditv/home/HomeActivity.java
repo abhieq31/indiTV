@@ -107,6 +107,14 @@ public class HomeActivity extends Activity {
     private FrameLayout root, overlay;
     private View creditBox, clockBox;
     private TextView tithiLine;
+    private View rowShade;
+
+    private void tintRowShade(int photo) {
+        int deep = Ui.shade(photo, 0.16f) & 0xFFFFFF;
+        GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{
+                0x00000000 | deep, 0x00000000 | deep, 0x8C000000 | deep, 0xE0000000 | deep, 0xF2000000 | deep});
+        rowShade.setBackground(g);
+    }
     private TextView creditTitle, creditLine, weather, appsTitle, overlayTitle, hint;
     private ScrollView scroller;
     private HorizontalScrollView dockScroll;
@@ -447,8 +455,8 @@ public class HomeActivity extends Activity {
     private boolean rowOn(String row) {
         if (store.hiddenRows.contains(row)) return false;
         // Weekdays: the simple home for Papa, Mummy, Dada and Ba (Right now, Favourites, Apps).
-        if (simpleNow() && (ROW_UPNEXT.equals(row) || ROW_PICKS.equals(row) || ROW_RECENT.equals(row)
-                || ROW_INPUTS.equals(row))) return false;
+        if (ROW_INPUTS.equals(row)) return false; // Tata Play has its own button at the top
+        if (simpleNow() && (ROW_UPNEXT.equals(row) || ROW_PICKS.equals(row) || ROW_RECENT.equals(row))) return false;
         return true;
     }
 
@@ -538,6 +546,11 @@ public class HomeActivity extends Activity {
         bottomScrim.setBackground(new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
                 new int[]{0xCC000000, 0x55000000, 0x00000000}));
         root.addView(bottomScrim, new FrameLayout.LayoutParams(-1, dp(260), Gravity.BOTTOM));
+        // The painting stays clear at the top and melts into a deep shade of its own colour under
+        // the rows, so cards sit on calm ground instead of on a busy picture.
+        rowShade = new View(this);
+        tintRowShade(0xFF20140C);
+        root.addView(rowShade, new FrameLayout.LayoutParams(-1, -1));
 
 
         scroller = new ScrollView(this) {
@@ -692,6 +705,7 @@ public class HomeActivity extends Activity {
     private void showCredit(String title, String line, int color) {
         Timing.mark("wallpaper shown");
         photoColor = color;
+        if (rowShade != null) tintRowShade(color);
         invalidateAll(topBar); // the tab capsule's tint follows the photo
         GlassDrawable.backdropChanged();
         Ui.setAccent(store.dynColor ? Ui.accentFrom(color) : Color.WHITE);
@@ -1079,15 +1093,39 @@ public class HomeActivity extends Activity {
         String head = Family.headline();
         if (nowSec.title != null) nowSec.title.setText(Family.greeting() + (head.isEmpty() ? "" : "  ·  " + head));
         showTithi();
-        List<Family.Card> now = new ArrayList<>();
-        List<Family.Card> cards = Family.cardsNow(now);
-        // YouTube is what's on most of the time: it comes first, except at aarti and news time.
-        boolean timed = false;
-        for (Family.Card c : now) timed |= c == Family.ADHYASHAKTI || c == Family.NEWS;
-        // YouTube itself is first in Favourites, right below; this row is only real videos.
-        for (Family.Card c : cards) nowSec.add(nowCell(c, now.contains(c), true));
+        // Only this part of the day's cards, each a real video (YouTube itself is in Favourites below).
+        for (Family.Card c : Family.cardsNow(this)) nowSec.add(nowCell(c, false, true));
         nowSec.box.setVisibility(View.VISIBLE);
         if (hadFocus || !userMoved) goHome();
+    }
+
+    /** A channel handle's current live stream, or its newest video: "@SandeshNewsTV" to a video id. */
+    private final Map<String, String> liveIds = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static String liveVideo(String handle) {
+        try {
+            java.net.HttpURLConnection h = (java.net.HttpURLConnection) new java.net.URL(
+                    "https://www.youtube.com/" + handle + "/live").openConnection();
+            h.setConnectTimeout(10_000);
+            h.setReadTimeout(15_000);
+            h.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 9) AppleWebKit/537.36 Chrome/120 Safari/537.36");
+            h.setRequestProperty("Accept-Language", "en");
+            StringBuilder sb = new StringBuilder();
+            try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(h.getInputStream(), "UTF-8"))) {
+                char[] buf = new char[16 * 1024];
+                for (int n; (n = r.read(buf)) > 0 && sb.length() < 600_000; ) {
+                    sb.append(buf, 0, n);
+                    if (sb.indexOf("rel=\"canonical\"") >= 0 && sb.indexOf("</head>") >= 0) break;
+                }
+            } finally {
+                h.disconnect();
+            }
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("rel=\"canonical\" href=\"https://www\\.youtube\\.com/watch\\?v=([A-Za-z0-9_-]{11})").matcher(sb);
+            return m.find() ? m.group(1) : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /** Today's tithi under the date, and the festival's name if there is one. */
@@ -1111,8 +1149,8 @@ public class HomeActivity extends Activity {
             weekendSec.box.setVisibility(View.GONE);
             return;
         }
-        for (Family.Card c : Family.WEEKEND) weekendSec.add(nowCell(c, false, false));
-        weekendSec.box.setVisibility(View.VISIBLE);
+        // The young ones' card joins Right now on weekends; no second row of app logos.
+        weekendSec.box.setVisibility(View.GONE);
     }
 
     /**
@@ -1126,7 +1164,7 @@ public class HomeActivity extends Activity {
         cell.setGravity(Gravity.START);
         cell.setClipChildren(false);
 
-        String vid = Family.videoId(card);
+        String vid = !card.channel.isEmpty() ? liveIds.get(card.channel) : Family.videoId(card);
         Apps.Entry app = null;
         if (vid == null && card.art == null) {
             if (card.hdmi > 0) {
@@ -1218,6 +1256,8 @@ public class HomeActivity extends Activity {
                 return;
             }
             Intent i = Family.intent(this, card);
+            String live = card.channel.isEmpty() ? null : liveIds.get(card.channel);
+            if (live != null && i != null) i.setData(Uri.parse("https://www.youtube.com/watch?v=" + live));
             try {
                 if (i == null) throw new IllegalStateException();
                 startActivity(i);
@@ -1227,6 +1267,18 @@ public class HomeActivity extends Activity {
             }
         });
         final android.widget.ImageView into = art;
+        if (into != null && vid == null && !card.channel.isEmpty()) net.execute(() -> {
+            // Today's live stream (or newest video) of a news channel, then its own thumbnail.
+            String id = liveVideo(card.channel);
+            if (id == null) return;
+            Bitmap b = Media.poster(this, "https://i.ytimg.com/vi/" + id + "/maxresdefault.jpg");
+            if (b == null) b = Media.poster(this, "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg");
+            Bitmap got = b;
+            ui.post(() -> {
+                liveIds.put(card.channel, id);
+                if (got != null) into.setImageBitmap(got);
+            });
+        });
         if (into != null && vid != null) img.execute(() -> {
             // The video's own thumbnail from YouTube (kept on the TV after the first time).
             Bitmap b = Media.poster(this, "https://i.ytimg.com/vi/" + vid + "/maxresdefault.jpg");
@@ -1801,6 +1853,7 @@ public class HomeActivity extends Activity {
     // ---------------------------------------------------------------- top bar
 
     /** Account, search, Home, Live TV, Inputs and settings, Google TV-style. */
+    /** Just two buttons: Home, and Tata Play (the set-top box on HDMI 1). Settings is the last tile in Apps. */
     private LinearLayout buildTopBar() {
         LinearLayout bar = row();
         bar.setGravity(Gravity.CENTER_VERTICAL);
@@ -1808,55 +1861,22 @@ public class HomeActivity extends Activity {
         bar.setClipChildren(false);
         bar.setClipToPadding(false);
         bar.setPadding(dp(10), dp(10), dp(10), dp(10));
-        bar.addView(accountButton());
         LinearLayout tabs = row();
         tabs.setGravity(Gravity.CENTER_VERTICAL);
         tabs.setBackground(new GlassDrawable(tabs, -1, 0x14FFFFFF, 0.8f));
         tabs.setPadding(dp(3), dp(3), dp(3), dp(3));
-        View searchTab = tab(R.drawable.ic_tab_search, null, "Search", () -> openSearch(""), false);
-        searchTab.setTag("tab:search");
-        tabs.addView(searchTab);
-        tabs.addView(tab(R.drawable.ic_tab_home, "Home", "Home", this::goHome, true));
-        Intent live = null;
-        for (String p : LIVE_TV_APPS) {
-            live = launchIntent(p);
-            if (live != null) { liveTv = p; break; }
-        }
-        if (live != null || !Inputs.ports(this).isEmpty()) {
-            Intent openLive = live;
-            View liveTab = tab(R.drawable.ic_tab_tv, "Live TV", "Live TV", () -> openLiveTv(openLive), false);
-            liveTab.setOnLongClickListener(v -> { chooseLiveTv(openLive != null); return true; });
-            tabs.addView(liveTab);
-        }
-        // Android TV's standard input picker (the tray the remote's Input button opens); else the Inputs row.
-        tabs.addView(tab(R.drawable.ic_tab_input, "Inputs", "Inputs", () -> {
+        View home = tab(R.drawable.ic_tab_home, "Home", "Home", this::goHome, true);
+        home.setTag("tab:search"); // where Up from the first row lands
+        tabs.addView(home);
+        tabs.addView(tab(R.drawable.ic_tab_tv, "Tata Play", "Tata Play (HDMI 1)", () -> {
+            Intent i = Family.intent(this, Family.NEWS);
             try {
-                startActivity(new Intent("com.android.tv.action.VIEW_INPUTS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                if (i != null) startActivity(i);
             } catch (Exception ex) {
-                View first = firstTile(inputsSec.row);
-                if (first != null) first.requestFocus();
+                Toast.makeText(this, "Couldn't open HDMI 1", Toast.LENGTH_SHORT).show();
             }
         }, false));
-        // Free TV: the app you wired to it, else the TV maker's free-channel app, with a generic icon.
-        String channels = freeTvApp();
-        Intent chan = channels != null ? launchIntent(channels) : null;
-        if (chan != null) {
-            Intent open = chan;
-            View t = tab(R.drawable.ic_tab_freetv, "Free TV", "Free TV (" + appLabel(channels) + ")", () -> {
-                try { startActivity(open); } catch (Exception ignored) { }
-            }, false);
-            t.setOnLongClickListener(v -> { chooseFreeTv(); return true; });
-            tabs.addView(t);
-        }
-        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(-2, -2);
-        tlp.leftMargin = dp(10);
-        tlp.rightMargin = dp(10);
-        bar.addView(tabs, tlp);
-        bar.addView(circleButton(R.drawable.ic_tab_settings, null, "Settings", () -> {
-            try {
-                startActivity(new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            } catch (Exception ignored) { }
-        }));
+        bar.addView(tabs, new LinearLayout.LayoutParams(-2, -2));
         return bar;
     }
 

@@ -25,6 +25,9 @@ final class Family {
 
     static final String YOUTUBE = "com.google.android.youtube.tv";
 
+    /** Shown in the greeting: "Good evening, Patel family". */
+    static final String FAMILY_NAME = "Patel";
+
     /** One card in the "Right now" row. */
     static final class Card {
         final String id, title, subtitle, who;
@@ -39,6 +42,16 @@ final class Family {
         /** Wallpaper (assets/wallpapers/NAME.jpg) used as the card picture, or null for a colour. */
         final String art;
         final int color;
+        /**
+         * A YouTube channel handle ("@TV9GujaratiNews") whose live stream (or newest video) the card
+         * plays; indiTV looks it up each time Home opens, so news is always today's. "" if none.
+         */
+        String channel = "";
+
+        Card live(String handle) {
+            channel = handle;
+            return this;
+        }
 
         Card(String id, String title, String subtitle, String who, String query, String video,
              int hdmi, String[] apps, String art, int color) {
@@ -89,6 +102,17 @@ final class Family {
     static final Card DARSHAN = new Card("darshan", "Darshan", "Devotional screensaver", "For guests",
             "", "", 0, NONE, "night-vishnu-among-the-stars", 0xFF2A2350);
 
+    static final Card ASHAPURA = new Card("ashapura", "Aashapura Maa Aarti", "Hemant Chauhan · Utaro Aarti", "Everyone",
+            "ashapura maa aarti", "https://www.youtube.com/watch?v=sOQejx9us8U", 0, NONE, null, 0xFFB03A2E);
+    static final Card SUNDARKAND = new Card("sundarkand", "Sampoorna Sundarkand", "Ashwin Kumar Pathak", "Mummy",
+            "sundarkand", "https://www.youtube.com/watch?v=EQn9Yzy0jq8", 0, NONE, null, 0xFFB5651D);
+    static final Card KATHA = new Card("katha", "Ram Katha · Morari Bapu", "Gujarati prasang · Chitrakutdham", "Everyone",
+            "morari bapu ram katha", "https://www.youtube.com/watch?v=WXWgTI0cpXw", 0, NONE, null, 0xFF7A4E9C);
+    static final Card TV9 = new Card("tv9", "TV9 Gujarati", "Live news", "Papa & Dada",
+            "", "https://www.youtube.com/@TV9GujaratiNews/live", 0, NONE, null, 0xFF1F5FA8).live("@TV9GujaratiNews");
+    static final Card SANDESH = new Card("sandesh", "Sandesh News", "Live news", "Papa & Dada",
+            "", "https://www.youtube.com/@SandeshNewsTV/live", 0, NONE, null, 0xFF2D6E8E).live("@SandeshNewsTV");
+
     /** The YouTube video id in a card's link ("LUx8wlA_dk8"), or null. */
     static String videoId(Card card) {
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("[?&]v=([A-Za-z0-9_-]{11})").matcher(card.video);
@@ -121,13 +145,16 @@ final class Family {
         }
     }
 
+    /**
+     * Mornings and evenings are for prayer; afternoons and nights for local news and
+     * entertainment. The row shows only the cards for this part of the day.
+     */
     private static final Slot[] DAY = {
-            new Slot(4, 30, 11, 0, "Morning prayers", HANUMAN_CHALISA, MORNING_AARTI, BHAJAN),
-            new Slot(11, 0, 18, 45, "Bhajans", BHAJAN, GUJARATI_SONGS),
-            new Slot(18, 45, 20, 15, "Aarti time", ADHYASHAKTI),
-            new Slot(20, 15, 22, 0, "News time", NEWS),
-            new Slot(22, 0, 4, 30, "Late night", GUJARATI_FUN, GUJARATI_SONGS),
-    };
+            new Slot(4, 30, 11, 0, "Morning prayers", HANUMAN_CHALISA, SUNDARKAND, ASHAPURA, MORNING_AARTI, KATHA, BHAJAN),
+            new Slot(11, 0, 17, 30, "News and entertainment", TV9, SANDESH, GUJARATI_FUN, GUJARATI_SONGS),
+            new Slot(17, 30, 20, 15, "Evening aarti", ADHYASHAKTI, ASHAPURA, HANUMAN_CHALISA, SUNDARKAND, KATHA),
+            new Slot(20, 15, 4, 30, "News and entertainment", NEWS, TV9, SANDESH, GUJARATI_FUN, GUJARATI_SONGS),
+    }
 
     /**
      * The elders' cards (Papa, Mummy, Dada, Ba), in the order they fill the row after the current
@@ -177,13 +204,13 @@ final class Family {
     static String greeting() {
         try {
             Panchang.Day d = Panchang.today();
-            if (d.festival != null && !d.festival.greeting.isEmpty()) return d.festival.greeting;
+            if (d.festival != null && !d.festival.greeting.isEmpty()) return d.festival.greeting + ", " + FAMILY_NAME + " family";
         } catch (RuntimeException ignored) { }
         int h = minuteOfDay() / 60;
-        if (h >= 4 && h < 12) return "Good morning";
-        if (h >= 12 && h < 17) return "Good afternoon";
-        if (h >= 17 && h < 22) return "Good evening";
-        return "Good night";
+        if (h >= 4 && h < 12) return "Good morning" + ", " + FAMILY_NAME + " family";
+        if (h >= 12 && h < 17) return "Good afternoon" + ", " + FAMILY_NAME + " family";
+        if (h >= 17 && h < 22) return "Good evening" + ", " + FAMILY_NAME + " family";
+        return "Good night" + ", " + FAMILY_NAME + " family";
     }
 
     /** Favourites on first start: whichever are installed, in this order. */
@@ -265,13 +292,17 @@ final class Family {
     }
 
     /** Cards for the row: this part of the day's first (marked as now), then the rest. */
-    static List<Card> cardsNow(List<Card> nowOut) {
+    static List<Card> cardsNow(Context c) {
         int m = minuteOfDay();
         List<Card> out = new ArrayList<>();
-        for (Slot s : DAY) {
-            if (!s.has(m)) continue;
-            for (Card c : s.cards) if (!out.contains(c)) { out.add(c); nowOut.add(c); }
+        for (Slot sl : DAY) {
+            if (!sl.has(m)) continue;
+            for (Card k : sl.cards) if (!out.contains(k)) out.add(k);
         }
+        if (everyoneHome(c)) out.add(AOT); // the young ones are home
+        out.add(DARSHAN);
+        return out;
+    }
         for (Card c : ELDERS) if (!out.contains(c)) out.add(c);
         out.add(DARSHAN);
         return out;

@@ -17,44 +17,35 @@ wallpapers) and [Glass TV](https://github.com/aqmangge/glass-tv-home) (a home fo
 **Download:** [inditv.apk](https://github.com/abhieq31/indiTV/releases/latest/download/inditv.apk)
 · [All releases](https://github.com/abhieq31/indiTV/releases)
 
-## Two homes in one
+## The home screen
 
-Most days the TV is for **Papa, Mummy, Dada and Ba**, so on weekdays indiTV shows a
-**simple home** with only three things on it:
+The top has only two buttons: **Home** and **Tata Play** (HDMI 1). indiTV Settings is the last
+tile in Apps. The heading greets the family by name, "Good evening, Patel family", or the
+festival's greeting on festival days. The painting stays clear at the top and melts into a deep
+shade of its own colour under the rows.
 
-1. **Right now**, with large cards that read from across the room. Each card shows the original
-   artwork: the video's own YouTube thumbnail (one press plays that exact video), or the app's
-   own banner. The name is always written underneath. The cards marked **NOW** come first:
+**Right now** changes with the time of day. Mornings and evenings are for prayer; afternoons and
+nights for local news and entertainment. Every card is a real video with its own thumbnail, and
+one press plays it:
 
-   | Time | Cards |
-   |---|---|
-   | 4:30 AM – 11 AM | Shree Hanuman Chalisa (Hariharan), Om Jai Jagdish Hare (Anuradha Paudwal), Krishna Bhajans |
-   | 11 AM – 6:45 PM | YouTube, Krishna Bhajans, Gujarati Songs |
-   | 6:45 PM – 8:15 PM | **Jay Adhyashakti Aarti** (Kinjal Dave; first card, so Home then OK plays it) |
-   | 8:15 PM – 10 PM | **News on Tata Play** (HDMI 1), Gujarati News Live |
-   | 10 PM – 4:30 AM | Gujarati Comedy & Natak, Gujarati Songs |
+| Time | Cards |
+|---|---|
+| 4:30 AM – 11 AM | Hanuman Chalisa (Hariharan), Sampoorna Sundarkand (Ashwin Kumar Pathak), Aashapura Maa Aarti (Hemant Chauhan), Om Jai Jagdish Hare, Ram Katha by Morari Bapu, Krishna bhajans |
+| 11 AM – 5:30 PM | TV9 Gujarati and Sandesh News (today's live stream), Rang Chhe Rajja (Siddharth Randeria), Killol garba (Kinjal Dave) |
+| 5:30 PM – 8:15 PM | **Jay Adhyashakti Aarti** (Kinjal Dave), Aashapura Maa Aarti, Hanuman Chalisa, Sundarkand, Ram Katha |
+| 8:15 PM – 4:30 AM | **News on Tata Play**, TV9 Gujarati, Sandesh News, comedy natak, garba |
 
-   The row ends with **Darshan**, which starts the screensaver straight away.
-2. **Favourites**: YouTube, JioHotstar, Prime Video, Netflix, Apple TV, then SonyLIV.
-   Disney's films and shows are inside JioHotstar in India.
-3. **Apps**: everything else, further down.
+The news cards look up each channel's live stream every time Home opens, so they always show
+today's picture. The row ends with **Darshan**, which starts the screensaver.
 
-On **Saturdays, Sundays and holidays**, when all four adults and the young ones are home, it adds:
+Below are **Favourites** (YouTube, JioHotstar, Prime Video, Netflix, Apple TV, SonyLIV) and
+**Apps**. On weekdays that's all. On Saturdays, Sundays and holidays, Attack on Titan joins
+Right now and **Up next**, **Top picks** and **Recent** appear. For a festival on a weekday,
+turn on **indiTV Settings > Home screen > Holiday today**, or add the date to `HOLIDAYS` in
+[Family.java](src/tv/inditv/home/Family.java). The family name is `FAMILY_NAME` in the same
+file.
 
-- **Weekend · everyone's home**: Attack on Titan, YouTube Shorts, Netflix and a Gujarati
-  Movie Night. Attack on Titan opens Crunchyroll if it's installed, otherwise Google TV's search,
-  which shows every app that has it.
-- **Up next**, **Top picks** and **Recent**, for picking up where someone left off.
-
-The switch happens by itself at midnight. For a festival on a weekday, turn on
-**indiTV Settings > Home screen > Holiday today** (it turns itself off at midnight), or add the
-date to `HOLIDAYS` in [Family.java](src/tv/inditv/home/Family.java). To always show
-everything, turn off **Simple home on weekdays**.
-
-**Wallpapers:** 11 devotional paintings are built in, chosen by the time of day. Mornings show
-Hanuman, Krishna, the Wheel of Dharma and the dawn; daytime shows the Gita chariot, Radha-Krishna
-and Shiva-Parvati at sunset; nights show Vishnu among the stars, Shiva-Parvati on the moonlit
-lake, and little Krishna and Shiva asleep under the stars.
+**Wallpapers:** 11 devotional paintings are built in, chosen by the time of day.
 
 ## The Gujarati calendar
 
@@ -89,8 +80,8 @@ When nothing is playing, the TV shows **Darshan**. It is kept quiet on purpose:
   Shri Krishna Sharanam Mama, Tvameva Mata, Om Tryambakam, Krishnaya Vasudevaya and
   Shantakaram. On festivals, every other painting has the day's own: Sarva Mangala Mangalye for
   Navratri, Shubham Karoti for Diwali and the New Year, the Surya shloka for Uttarayan;
-- a small ॐ breathes in the corner; the clock, the date and the day in the Gujarati calendar
-  sit at the lower right;
+- a small ॐ breathes in the corner; the greeting ("Good evening, Patel family"), the clock,
+  the date and the day in the Gujarati calendar sit at the lower right;
 - optionally, a soft **tanpura** drone (Pa Sa Sa Sa, tuned to C#), made on the TV itself.
 
 indiTV makes Darshan the TV's screensaver by itself once Set up is done. For guests, open it any
