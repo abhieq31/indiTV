@@ -288,11 +288,11 @@ final class Family {
             this.card = card;
         }
 
-        /** Minutes after midnight on that day (month 0-based), rounded to 5 minutes for sun times. */
+        /** Minutes after midnight on that day (month 0-based); sun times go down to the 5 minutes. */
         int minuteOn(int y, int m, int d) {
             if (by == FIXED) return hour * 60 + minute;
             int sun = Panchang.sunMinutes(y, m, d, by == SUNRISE, lat, lon);
-            return Math.round((sun + minute) / 5f) * 5;
+            return (sun + minute) / 5 * 5; // down to the 5 minutes: 5:58 PM sunset gives a 6:05 aarti
         }
 
         int minuteToday() {
@@ -391,7 +391,7 @@ final class Family {
 
         List<Card> out = new ArrayList<>();
         // The set moments come first while they are on: the 7 PM aarti, the 8:30 PM news.
-        int aarti = sunsetToday() + AARTI_AFTER_SUNSET;
+        int aarti = (sunsetToday() + AARTI_AFTER_SUNSET) / 5 * 5;
         if (pool.contains(ADHYASHAKTI) && m >= aarti - 30 && m < aarti + 75) out.add(ADHYASHAKTI);
         if (pool.contains(NEWS) && m >= 20 * 60 + 15 && m < 21 * 60 + 30) out.add(NEWS);
         // Then what the family comes back to at this time of day; the curated order breaks ties.
