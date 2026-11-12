@@ -26,9 +26,11 @@ public class DarshanActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         darshan.start();
+        OnScreen.darshan = true;
     }
 
     @Override protected void onPause() {
+        OnScreen.darshan = false;
         darshan.stop();
         super.onPause();
     }

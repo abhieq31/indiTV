@@ -252,6 +252,7 @@ public class HomeActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         resumed = true;
+        OnScreen.home = true;
         rearmTries = 0;
         ui.removeCallbacks(rearm);
         ui.postDelayed(rearm, 1500);
@@ -315,6 +316,7 @@ public class HomeActivity extends Activity {
     @Override protected void onPause() {
         super.onPause();
         resumed = false;
+        OnScreen.home = false;
         slideshow.pause();
         ui.removeCallbacks(upNextTurn);
         ui.removeCallbacks(nowTick);

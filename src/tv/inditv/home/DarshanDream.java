@@ -18,9 +18,11 @@ public class DarshanDream extends DreamService {
     @Override public void onDreamingStarted() {
         super.onDreamingStarted();
         darshan.start();
+        OnScreen.darshan = true;
     }
 
     @Override public void onDreamingStopped() {
+        OnScreen.darshan = false;
         darshan.stop();
         super.onDreamingStopped();
     }

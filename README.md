@@ -102,7 +102,9 @@ Options are in **indiTV Settings > Wallpaper**. To change a shloka, edit
 
 ## Automatic times
 
-When the TV is on, indiTV does these by itself, over whatever is playing:
+These happen by themselves only when the TV is showing indiTV (Home, or the Darshan
+screensaver). If someone is watching anything else (YouTube, Tata Play, a film), nothing
+changes; the aarti or the news is simply the first card on Home when they come back.
 
 | Time | What happens | Default |
 |---|---|---|

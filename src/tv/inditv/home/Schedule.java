@@ -85,7 +85,11 @@ final class Schedule {
             for (Family.Auto a : Family.AUTO) {
                 if (!a.id.equals(id) || !Family.autoOn(c, a)) continue;
                 PowerManager pm = (PowerManager) c.getSystemService(Context.POWER_SERVICE);
-                if (pm == null || pm.isInteractive()) run(c, a); // only when the TV is on
+                boolean on = pm == null || pm.isInteractive();
+                // Only when the TV is on and showing indiTV (Home or Darshan). If someone is
+                // watching anything else, YouTube, Tata Play, a film, nothing changes: the aarti
+                // or the news is simply first on Home when they come back.
+                if (on && OnScreen.indiTv()) run(c, a);
             }
             arm(c); // tomorrow's
         }
